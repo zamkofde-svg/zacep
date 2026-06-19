@@ -126,7 +126,9 @@ switch ($action) {
         $place  = isset($body['place']) && $body['place'] !== '' ? (int) $body['place'] : null;
         $points = (int) ($body['points'] ?? 0);
         if (!$tid || !$uid) json_out(['error' => 'bad_input'], 422);
-        $pdo->prepare('INSERT INTO results (user_id,tournament_id,place,points) VALUES (?,?,?,?)')
+        // повторный ввод результата обновляет, а не задваивает (uniq_result)
+        $pdo->prepare('INSERT INTO results (user_id,tournament_id,place,points) VALUES (?,?,?,?)
+                       ON DUPLICATE KEY UPDATE place=VALUES(place), points=VALUES(points)')
             ->execute([$uid, $tid, $place, $points]);
         // уведомление о результате
         $tg = $pdo->query('SELECT tg_id FROM users WHERE id=' . $uid)->fetchColumn();

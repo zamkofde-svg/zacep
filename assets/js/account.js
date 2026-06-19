@@ -172,7 +172,7 @@ function renderDashboard(me, tournaments) {
             <div class="reg-item">
               <div class="reg-date"><span class="d">${dayNum(t.starts_at)}</span><span class="m">${monShort(t.starts_at)}</span></div>
               <div class="reg-info"><h4>${esc(t.title)} · ${timeStr(t.starts_at)}</h4><p>${t.taken}/${t.seats} мест · взнос ${fmt(t.buyin)} ₽</p></div>
-              <button class="btn btn-primary btn-sm reg-btn" data-tid="${t.id}">Записаться</button>
+              <button class="btn btn-primary btn-sm reg-btn" data-tid="${t.id}" data-title="${esc(t.title)}">Записаться</button>
             </div>`).join('') : '<p class="muted" style="padding:8px 0;">Новые турниры скоро появятся.</p>'}
 
           <div class="panel-head" style="margin-top:30px;"><h3>История турниров</h3><a href="index.html#rating">Весь рейтинг →</a></div>
@@ -211,14 +211,18 @@ function renderDashboard(me, tournaments) {
     </div>`;
 
   el('logout').addEventListener('click', doLogout);
-  document.querySelectorAll('.reg-btn').forEach(b => b.addEventListener('click', () => doRegister(b.dataset.tid)));
+  document.querySelectorAll('.reg-btn').forEach(b => b.addEventListener('click', () => doRegister(b.dataset.tid, b.dataset.title)));
   window.scrollTo(0, 0);
 }
 
-async function doRegister(tid) {
+async function doRegister(tid, title) {
   if (!BACKEND) { alert('Демо-режим: на боевом сайте здесь произойдёт запись на турнир.'); return; }
+  if (!confirm(`Записаться на турнир «${title}»?`)) return;
   try {
-    await api('register.php', { method: 'POST', body: JSON.stringify({ tournament_id: Number(tid) }) });
+    const r = await api('register.php', { method: 'POST', body: JSON.stringify({ tournament_id: Number(tid) }) });
+    alert(r.status === 'waitlist'
+      ? 'Ты добавлен в лист ожидания — сообщим, как освободится место.'
+      : '✅ Готово! Ты записан на турнир. Подтверждение пришло в Telegram.');
     await loadDashboard();
   } catch (e) {
     alert(e.data?.message || 'Не удалось записаться. Попробуйте позже.');

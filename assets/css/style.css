@@ -169,8 +169,11 @@ h3 { font-size: 1.25rem; }
 .tcard .fmt { color: var(--muted); font-size: .88rem; margin-bottom: 20px; }
 .tcard .meta { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
 .tcard .meta div { display: flex; justify-content: space-between; font-size: .9rem; border-bottom: 1px dashed var(--line); padding-bottom: 9px; }
-.tcard .meta span:first-child { color: var(--muted); }
-.tcard .meta b { font-weight: 600; }
+.tcard .meta span:first-child { color: var(--muted); padding-right: 10px; }
+.tcard .meta b { font-weight: 600; white-space: nowrap; }
+.tcard .date { padding-right: 56px; } /* не залезать под ribbon */
+/* авто-сетка карточек: адаптируется к числу и ширине, на мобиле — 1 колонка */
+.cards-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 22px; }
 
 /* ---------- Formats ---------- */
 .fmt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }

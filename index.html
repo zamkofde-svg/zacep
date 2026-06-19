@@ -92,31 +92,8 @@
         <h2>Ближайшие турниры</h2>
         <p>Каждый турнир приносит очки в общий рейтинг сезона. Перед стартом — бесплатный обучающий стол для новичков.</p>
       </div>
-      <div class="tour-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:760px;margin-inline:auto;">
-        <div class="tcard reveal">
-          <span class="ribbon">ХИТ</span>
-          <span class="date">ПТ · 20 июня · 19:00</span>
-          <h3>Классика</h3>
-          <p class="fmt">Texas Hold'em NL · фрист 20 000</p>
-          <div class="meta">
-            <div><span>Стартовый стек</span><b>20 000</b></div>
-            <div><span>Уровни блайндов</span><b>20 мин</b></div>
-            <div><span>Взнос</span><b>1 500 ₽</b></div>
-          </div>
-          <a href="account.html" class="btn btn-primary btn-block btn-sm">Записаться</a>
-        </div>
-
-        <div class="tcard reveal">
-          <span class="date">ВС · 22 июня · 17:00</span>
-          <h3>Баунти</h3>
-          <p class="fmt">Knockout · очки за каждого выбитого</p>
-          <div class="meta">
-            <div><span>Стартовый стек</span><b>30 000</b></div>
-            <div><span>Награда за КО</span><b>+250 очков</b></div>
-            <div><span>Взнос</span><b>2 500 ₽</b></div>
-          </div>
-          <a href="account.html" class="btn btn-primary btn-block btn-sm">Записаться</a>
-        </div>
+      <div class="cards-auto" id="tourGrid">
+        <p class="muted">Загрузка расписания…</p>
       </div>
     </div>
   </section>
@@ -170,19 +147,7 @@
         <h2>Гостевые турниры</h2>
         <p>Мы играем не только у себя. Регулярно проводим турниры на партнёрских площадках города — те же правила, те же очки в рейтинг, новая атмосфера.</p>
       </div>
-      <div class="tour-grid">
-        <div class="tcard reveal">
-          <span class="ribbon">ВЫЕЗД</span>
-          <span class="date">ВС · еженедельно · 18:00</span>
-          <h3>Бар «Коробок»</h3>
-          <p class="fmt">Texas Hold'em NL · гостевой турнир</p>
-          <div class="meta">
-            <div><span>Площадка</span><b>Бар «Коробок»</b></div>
-            <div><span>Очки в рейтинг</span><b>Да</b></div>
-            <div><span>Взнос</span><b>1 500 ₽</b></div>
-          </div>
-          <a href="account.html" class="btn btn-primary btn-block btn-sm">Записаться</a>
-        </div>
+      <div class="cards-auto" id="guestGrid">
         <div class="tcard reveal" style="display:flex;flex-direction:column;justify-content:center;align-items:flex-start;border-style:dashed;">
           <div class="ico" style="width:54px;height:54px;border-radius:14px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:1.6rem;margin-bottom:16px;">📍</div>
           <h3 style="margin-bottom:8px;">Хочешь турнир у себя?</h3>
