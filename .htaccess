@@ -1,0 +1,10 @@
+# Принудительный HTTPS (нужен для Telegram-входа и безопасности)
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Не отдавать наружу конфиги/служебное
+<FilesMatch "^(\.gitignore|README\.md|\.nojekyll)$">
+  Require all denied
+</FilesMatch>
