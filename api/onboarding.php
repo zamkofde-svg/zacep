@@ -17,9 +17,8 @@ if (mb_strlen($realName) < 3 || mb_strlen($realName) > 100) {
 if (mb_strlen($nick) < 2 || mb_strlen($nick) > 32) {
     json_out(['error' => 'bad_nick', 'message' => 'Ник от 2 до 32 символов'], 422);
 }
-// нормализуем телефон: оставляем цифры и плюс
-$phoneNorm = preg_replace('/[^\d+]/', '', $phone);
-if ($phoneNorm !== '' && strlen(preg_replace('/\D/', '', $phoneNorm)) < 10) {
+$phoneNorm = normalize_phone($phone);
+if ($phoneNorm !== '' && strlen(preg_replace('/\D/', '', $phoneNorm)) < 11) {
     json_out(['error' => 'bad_phone', 'message' => 'Проверьте номер телефона'], 422);
 }
 

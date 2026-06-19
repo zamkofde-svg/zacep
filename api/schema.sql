@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   photo_url    VARCHAR(512),
   nick         VARCHAR(64),
   phone        VARCHAR(32),
+  password_hash VARCHAR(255),
   onboarded    TINYINT(1) NOT NULL DEFAULT 0,
   is_admin     TINYINT(1) NOT NULL DEFAULT 0,
   created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP

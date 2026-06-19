@@ -77,7 +77,7 @@ switch ($action) {
     case 'reg_add': // ручная запись по телефону
         only_method('POST');
         $tid   = (int) ($body['tournament_id'] ?? 0);
-        $phone = preg_replace('/[^\d+]/', '', (string) ($body['phone'] ?? ''));
+        $phone = normalize_phone((string) ($body['phone'] ?? ''));
         $nick  = trim((string) ($body['nick'] ?? ''));
         if (!$tid || strlen(preg_replace('/\D/', '', $phone)) < 10) {
             json_out(['error' => 'bad_input', 'message' => 'Нужен турнир и корректный телефон'], 422);

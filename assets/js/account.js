@@ -86,6 +86,38 @@ function bindOnboarding() {
   });
 }
 
+/* ---------------- Вход/регистрация по телефону ---------------- */
+function bindPhoneAuth() {
+  const loginForm = el('phoneLoginForm');
+  const regForm = el('phoneRegForm');
+  if (!loginForm || !regForm) return;
+
+  el('toRegister')?.addEventListener('click', (e) => { e.preventDefault(); loginForm.hidden = true; regForm.hidden = false; });
+  el('toLogin')?.addEventListener('click', (e) => { e.preventDefault(); regForm.hidden = true; loginForm.hidden = false; });
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!BACKEND) { alert('Вход по телефону работает на боевом сайте (zacep.fun).'); return; }
+    try {
+      await api('login_phone.php', { method: 'POST', body: JSON.stringify({ phone: el('liPhone').value.trim(), password: el('liPass').value }) });
+      await route();
+    } catch (e) { alert(e.data?.message || 'Не удалось войти'); }
+  });
+
+  regForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!BACKEND) { alert('Регистрация работает на боевом сайте (zacep.fun).'); return; }
+    if (!el('rgConsent').checked) { alert('Подтвердите согласие, чтобы продолжить'); return; }
+    try {
+      await api('register_phone.php', { method: 'POST', body: JSON.stringify({
+        real_name: el('rgName').value.trim(), nick: el('rgNick').value.trim(),
+        phone: el('rgPhone').value.trim(), password: el('rgPass').value,
+      }) });
+      await route();
+    } catch (e) { alert(e.data?.message || 'Не удалось зарегистрироваться'); }
+  });
+}
+
 /* ---------------- Дашборд ---------------- */
 async function loadDashboard() {
   const [me, tours] = await Promise.all([api('my.php'), api('tournaments.php')]);
@@ -246,6 +278,7 @@ function startDemo() {
 /* ---------------- Старт ---------------- */
 (async function init() {
   bindOnboarding();
+  bindPhoneAuth();
   try {
     await api('me.php');       // проверяем, жив ли бэкенд
     BACKEND = true;

@@ -35,6 +35,30 @@
 
       <div id="tg-widget" style="display:flex;justify-content:center;min-height:52px;"></div>
 
+      <div class="auth-divider">или по телефону</div>
+
+      <!-- Вход по телефону -->
+      <form id="phoneLoginForm">
+        <div class="field"><label for="liPhone">Телефон</label><input type="tel" id="liPhone" placeholder="+7 900 000-00-00" autocomplete="tel" /></div>
+        <div class="field"><label for="liPass">Пароль</label><input type="password" id="liPass" placeholder="••••••••" autocomplete="current-password" /></div>
+        <button type="submit" class="btn btn-primary btn-block">Войти</button>
+        <p class="legal" style="text-align:center;margin-top:14px;">Нет аккаунта? <a href="#" id="toRegister" style="color:var(--accent);">Зарегистрироваться</a></p>
+      </form>
+
+      <!-- Регистрация по телефону -->
+      <form id="phoneRegForm" hidden>
+        <div class="field"><label for="rgName">Фамилия и имя</label><input type="text" id="rgName" placeholder="Иванов Иван" maxlength="100" /></div>
+        <div class="field"><label for="rgNick">Покерный ник</label><input type="text" id="rgNick" placeholder="например, Рейз" maxlength="32" /></div>
+        <div class="field"><label for="rgPhone">Телефон</label><input type="tel" id="rgPhone" placeholder="+7 900 000-00-00" autocomplete="tel" /></div>
+        <div class="field"><label for="rgPass">Пароль</label><input type="password" id="rgPass" placeholder="минимум 6 символов" autocomplete="new-password" /></div>
+        <label class="legal" style="display:flex;gap:10px;align-items:flex-start;text-align:left;cursor:pointer;margin:8px 0 16px;">
+          <input type="checkbox" id="rgConsent" style="margin-top:3px;flex:0 0 auto;" />
+          <span>Мне есть 18 лет, согласен на обработку персональных данных (<a href="consent.html" style="color:var(--accent);">152-ФЗ</a>) и принимаю <a href="rules.html" style="color:var(--accent);">правила</a>.</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Зарегистрироваться</button>
+        <p class="legal" style="text-align:center;margin-top:14px;">Уже есть аккаунт? <a href="#" id="toLogin" style="color:var(--accent);">Войти</a></p>
+      </form>
+
       <p class="legal">Входя, вы подтверждаете, что вам есть 18 лет, и принимаете
         <a href="rules.html" style="color:var(--accent);">правила клуба</a>,
         <a href="offer.html" style="color:var(--accent);">оферту</a> и

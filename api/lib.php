@@ -118,6 +118,18 @@ function public_user(array $u): array
     ];
 }
 
+/** Канонический формат телефона: 8XXX/+7XXX/7XXX → +7XXXXXXXXXX. */
+function normalize_phone(string $raw): string
+{
+    $d = preg_replace('/\D/', '', $raw);
+    if (strlen($d) === 11 && ($d[0] === '8' || $d[0] === '7')) {
+        $d = '7' . substr($d, 1);
+    } elseif (strlen($d) === 10) {
+        $d = '7' . $d;
+    }
+    return $d === '' ? '' : '+' . $d;
+}
+
 /** Требовать права администратора. */
 function require_admin(): array
 {
