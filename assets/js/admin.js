@@ -150,8 +150,8 @@ function renderRegs(regs, tid) {
     <div class="reg-item" data-uid="${r.user_id}">
       <div class="reg-date" style="width:auto;min-width:34px;"><span class="d" style="font-size:1.1rem;">${i+1}</span></div>
       <div class="reg-info" style="flex:1;">
-        <h4>${esc(r.nick || r.first_name || ('@'+(r.username||'игрок')))} ${r.status==='waitlist'?'<span class="status-pill wait">лист ожидания</span>':''}</h4>
-        <p>${esc(r.phone || (r.username?'@'+r.username:'—'))}</p>
+        <h4>${esc(r.real_name || r.nick || r.first_name || ('@'+(r.username||'игрок')))} ${r.status==='waitlist'?'<span class="status-pill wait">лист ожидания</span>':''}</h4>
+        <p>${esc([r.nick && r.nick!==r.real_name ? '«'+r.nick+'»' : '', r.phone, r.username?'@'+r.username:''].filter(Boolean).join(' · ') || '—')}</p>
       </div>
       <div class="mini-form">
         <input class="res-place" type="number" placeholder="место" min="1">

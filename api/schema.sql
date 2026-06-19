@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   username     VARCHAR(64),
   first_name   VARCHAR(128),
   last_name    VARCHAR(128),
+  real_name    VARCHAR(128),
   photo_url    VARCHAR(512),
   nick         VARCHAR(64),
   phone        VARCHAR(32),

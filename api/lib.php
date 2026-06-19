@@ -109,6 +109,7 @@ function public_user(array $u): array
         'username'   => $u['username'] ?? null,
         'first_name' => $u['first_name'] ?? null,
         'last_name'  => $u['last_name'] ?? null,
+        'real_name'  => $u['real_name'] ?? null,
         'photo_url'  => $u['photo_url'] ?? null,
         'nick'       => $u['nick'] ?? null,
         'phone'      => $u['phone'] ?? null,

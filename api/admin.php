@@ -65,7 +65,7 @@ switch ($action) {
     case 'registrations': // ?tournament_id=
         $tid = (int) ($_GET['tournament_id'] ?? $body['tournament_id'] ?? 0);
         $st = $pdo->prepare("
-            SELECT r.id, r.status, r.created_at, u.id AS user_id, u.nick, u.first_name, u.username, u.phone
+            SELECT r.id, r.status, r.created_at, u.id AS user_id, u.nick, u.real_name, u.first_name, u.username, u.phone
             FROM registrations r JOIN users u ON u.id=r.user_id
             WHERE r.tournament_id=? AND r.status<>'cancelled'
             ORDER BY r.created_at ASC

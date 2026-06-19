@@ -73,11 +73,12 @@ window.onTelegramAuth = async (user) => {
 function bindOnboarding() {
   el('onboardingForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const real_name = el('onbName').value.trim();
     const nick = el('onbNick').value.trim();
     const phone = el('onbPhone').value.trim();
     if (!el('onbConsent').checked) { alert('Подтвердите согласие, чтобы продолжить'); return; }
     try {
-      await api('onboarding.php', { method: 'POST', body: JSON.stringify({ nick, phone }) });
+      await api('onboarding.php', { method: 'POST', body: JSON.stringify({ real_name, nick, phone }) });
       await route();
     } catch (e) {
       alert(e.data?.message || 'Проверьте ник и телефон');
@@ -166,6 +167,7 @@ function renderDashboard(me, tournaments) {
           </div>
           <div class="panel">
             <div class="panel-head"><h3>Профиль</h3></div>
+            <div class="history-item"><span>Фамилия и имя</span><span>${esc(u.real_name || '—')}</span></div>
             <div class="history-item"><span>Покерный ник</span><span class="hi-place">${esc(u.nick || '—')}</span></div>
             <div class="history-item"><span>Телефон</span><span>${esc(u.phone || '—')}</span></div>
             <div class="history-item"><span>Telegram</span><span>${u.username ? '@' + esc(u.username) : '—'}</span></div>
@@ -213,7 +215,7 @@ function startDemo() {
     const today = new Date();
     const iso = (addDays, h) => { const d = new Date(today); d.setDate(d.getDate() + addDays); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(h).padStart(2,'0')}:00:00`; };
     const me = {
-      user: { id: 1042, username: 'artem_raise', first_name: 'Артём', nick: 'Артём «Рейз» К.', phone: '+7 900 000-00-00', onboarded: true },
+      user: { id: 1042, username: 'artem_raise', first_name: 'Артём', real_name: 'Кузнецов Артём', nick: 'Артём «Рейз» К.', phone: '+7 900 000-00-00', onboarded: true },
       registrations: [
         { status: 'confirmed', title: 'Классика', starts_at: iso(2, 19), venue: 'ТРЦ «Грин Хаус», Тюмень' },
         { status: 'waitlist',  title: 'Баунти',   starts_at: iso(4, 17), venue: 'ТРЦ «Грин Хаус», Тюмень' },
