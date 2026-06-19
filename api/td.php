@@ -230,12 +230,24 @@ switch ($action) {
     case 'move': { // ручной перенос игрока за стол/место
         only_method('POST');
         $uid = uid_from($pdo, $tid, $body);
+        if (!$uid) json_out(['error' => 'no_player', 'message' => 'Игрок с таким номером не найден'], 404);
         $table = (int) ($body['table_no'] ?? 0) ?: null;
         $seat  = (int) ($body['seat_no'] ?? 0) ?: null;
-        if (!$uid) json_out(['error' => 'no_player'], 404);
+
+        if ($table !== null && $seat === null) {
+            // место не указали — первое свободное за этим столом
+            $t = $pdo->prepare("SELECT seat_no FROM tournament_players WHERE tournament_id=? AND table_no=? AND status='active' AND user_id<>? AND seat_no IS NOT NULL");
+            $t->execute([$tid, $table, $uid]);
+            $busy = array_map('intval', array_column($t->fetchAll(), 'seat_no'));
+            $seat = 1; while (in_array($seat, $busy, true)) $seat++;
+        } elseif ($table !== null && $seat !== null) {
+            // если место занято другим — освобождаем того (он сядет при пересборке)
+            $pdo->prepare("UPDATE tournament_players SET seat_no=NULL WHERE tournament_id=? AND table_no=? AND seat_no=? AND user_id<>?")
+                ->execute([$tid, $table, $seat, $uid]);
+        }
         $pdo->prepare("UPDATE tournament_players SET table_no=?, seat_no=? WHERE tournament_id=? AND user_id=?")
             ->execute([$table, $seat, $tid, $uid]);
-        json_out(['ok' => true]);
+        json_out(['ok' => true, 'table_no' => $table, 'seat_no' => $seat]);
         break;
     }
 

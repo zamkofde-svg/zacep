@@ -59,6 +59,14 @@ function render(d) {
     <div class="panel" style="margin-bottom:22px;">
       <div class="panel-head"><h3>Рассадка</h3><button class="btn btn-primary btn-sm" id="drawBtn">🎲 Жеребьёвка / пересобрать</button></div>
       <div id="seatMap">${seatMapHTML(d.players)}</div>
+      <div class="mini-form" style="margin-top:16px;padding-top:16px;border-top:1px dashed var(--line);">
+        <span class="muted" style="font-size:.85rem;">Вручную:</span>
+        <input id="mvNum" type="number" placeholder="№ бэйджа" style="width:110px;">
+        <input id="mvTable" type="number" placeholder="стол" style="width:80px;">
+        <input id="mvSeat" type="number" placeholder="место (необяз.)" style="width:140px;">
+        <button class="btn btn-primary btn-sm" id="mvBtn">Посадить</button>
+        <button class="btn btn-ghost btn-sm" id="mvOff">Снять со стола</button>
+      </div>
     </div>
 
     <div class="panel" style="margin-bottom:22px;">
@@ -108,6 +116,17 @@ function render(d) {
   document.getElementById('qReentry').addEventListener('click', () => { const n = qn(); if (n) act(() => td('entry', { number: n, kind: 'reentry', amount: T.buyin })); });
   document.getElementById('qAddon').addEventListener('click', () => { const n = qn(); if (n) act(() => td('entry', { number: n, kind: 'addon', amount: T.buyin })); });
   document.getElementById('drawBtn').addEventListener('click', () => { if (confirm('Пересобрать рассадку активных игроков? Текущие места изменятся.')) act(() => td('seat_draw', {})); });
+  // ручная посадка
+  document.getElementById('mvBtn').addEventListener('click', () => {
+    const n = Number(document.getElementById('mvNum').value), tbl = Number(document.getElementById('mvTable').value), st = Number(document.getElementById('mvSeat').value);
+    if (!n || !tbl) { alert('Введите номер бэйджа и стол'); return; }
+    act(() => td('move', { number: n, table_no: tbl, seat_no: st || 0 }));
+  });
+  document.getElementById('mvOff').addEventListener('click', () => {
+    const n = Number(document.getElementById('mvNum').value);
+    if (!n) { alert('Введите номер бэйджа'); return; }
+    act(() => td('move', { number: n, table_no: 0 }));
+  });
 
   document.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {
     const uid = Number(b.dataset.uid), a = b.dataset.act;
