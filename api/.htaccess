@@ -1,0 +1,8 @@
+# Закрываем прямой доступ к конфигам, схеме и библиотекам
+<FilesMatch "^(config\.php|config\.example\.php|config_public\.php|lib\.php|schema\.sql)$">
+  Require all denied
+</FilesMatch>
+# config_public.php нужен фронту — открываем обратно
+<Files "config_public.php">
+  Require all granted
+</Files>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Личный кабинет — Зацеп имеется</title>
-  <meta name="description" content="Личный кабинет игрока клуба спортивного покера «Зацеп имеется»: рейтинг, регистрации на турниры, статистика." />
+  <meta name="description" content="Личный кабинет игрока клуба спортивного покера «Зацеп имеется»: вход через Telegram, запись на турниры, рейтинг и статистика." />
   <link rel="icon" type="image/png" href="assets/img/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -13,165 +13,65 @@
 </head>
 <body>
 
-  <!-- ============ HEADER ============ -->
   <header class="header scrolled" id="header">
     <div class="wrap nav">
       <a href="index.html" class="logo">
         <img class="logo-mark" src="assets/img/logo-mark.png" alt="Зацеп имеется" />
         <span>Зацеп <span class="accent">имеется</span></span>
       </a>
-      <div class="nav-actions">
-        <a href="index.html" class="btn btn-ghost btn-sm">← На сайт</a>
-      </div>
+      <a href="index.html" class="btn btn-ghost btn-sm">← На сайт</a>
     </div>
   </header>
 
-  <!-- ============ LOGIN SCREEN ============ -->
-  <div class="auth-screen" id="authScreen">
+  <!-- ===== Экран входа ===== -->
+  <div class="auth-screen" id="view-auth">
     <div class="auth-card">
-      <a href="index.html" class="logo">
+      <a href="index.html" class="logo" style="justify-content:center;">
         <img class="logo-mark" src="assets/img/logo-mark.png" alt="Зацеп имеется" />
         <span>Зацеп <span class="accent">имеется</span></span>
       </a>
-      <h2 style="margin-top:18px;">Личный кабинет</h2>
-      <p class="sub">Войди, чтобы записываться на турниры и следить за рейтингом</p>
+      <h2 style="margin-top:18px;">Вход в клуб</h2>
+      <p class="sub">Войди через Telegram — это займёт пару секунд</p>
 
-      <button class="oauth-btn tg-login" data-login><span class="oi tg">✈</span> Войти через Telegram</button>
+      <div id="tg-widget" style="display:flex;justify-content:center;min-height:52px;"></div>
 
-      <div class="auth-divider">или по логину</div>
-
-      <form id="loginForm">
-        <div class="field">
-          <label for="login">Логин или телефон</label>
-          <input type="text" id="login" placeholder="например, raise42" autocomplete="username" />
-        </div>
-        <div class="field">
-          <label for="pass">Пароль</label>
-          <input type="password" id="pass" placeholder="••••••••" autocomplete="current-password" />
-        </div>
-        <div class="forgot"><a href="#">Забыли пароль?</a></div>
-        <button type="submit" class="btn btn-primary btn-block">Войти</button>
-      </form>
-
-      <p class="legal">Входя в кабинет, вы подтверждаете, что вам есть 18 лет, и принимаете <a href="rules.html" style="color:var(--accent);">правила клуба</a>, <a href="offer.html" style="color:var(--accent);">оферту</a> и <a href="privacy.html" style="color:var(--accent);">политику конфиденциальности</a>. Игра ведётся без денежных ставок.</p>
+      <p class="legal">Входя, вы подтверждаете, что вам есть 18 лет, и принимаете
+        <a href="rules.html" style="color:var(--accent);">правила клуба</a>,
+        <a href="offer.html" style="color:var(--accent);">оферту</a> и
+        <a href="privacy.html" style="color:var(--accent);">политику конфиденциальности</a>.
+        Игра ведётся без денежных ставок.</p>
     </div>
   </div>
 
-  <!-- ============ DASHBOARD ============ -->
-  <main class="dash" id="dash">
-    <div class="wrap">
+  <!-- ===== Онбординг «Прежде чем начать» ===== -->
+  <div class="auth-screen" id="view-onboarding" hidden>
+    <div class="auth-card">
+      <h2 style="text-align:center;">Прежде чем начать</h2>
+      <p class="sub">Для записи на турниры и ведения рейтинга нам нужен твой покерный ник и телефон.</p>
 
-      <div class="dash-head">
-        <div class="profile">
-          <div class="avatar">А</div>
-          <div class="who">
-            <h2>Артём «Рейз» К.</h2>
-            <div class="uid">ID игрока · #1042</div>
-            <div class="tg-tag">✈ @artem_raise · подключён</div>
-          </div>
+      <form id="onboardingForm">
+        <div class="field">
+          <label for="onbNick">Покерный ник</label>
+          <input type="text" id="onbNick" placeholder="например, Рейз" maxlength="32" required />
         </div>
-        <button class="logout" id="logout">Выйти</button>
-      </div>
-
-      <!-- Stats -->
-      <div class="dash-stats">
-        <div class="dstat"><div class="ic">🏅</div><div class="n">#1</div><div class="l">Место в рейтинге месяца</div><div class="delta up">▲ +2 за неделю</div></div>
-        <div class="dstat"><div class="ic">⭐</div><div class="n">2 480</div><div class="l">Очков в этом месяце</div><div class="delta up">▲ +360</div></div>
-        <div class="dstat"><div class="ic">🎫</div><div class="n">12</div><div class="l">Турниров сыграно</div><div class="delta">за июнь</div></div>
-        <div class="dstat"><div class="ic">💰</div><div class="n">67%</div><div class="l">Попаданий в призы (ITM)</div><div class="delta up">8 из 12</div></div>
-      </div>
-
-      <div class="dash-cols">
-        <!-- Left: registrations -->
-        <div class="panel">
-          <div class="panel-head">
-            <h3>Мои регистрации</h3>
-            <a href="index.html#tournaments">+ Записаться</a>
-          </div>
-
-          <div class="reg-item">
-            <div class="reg-date"><span class="d">20</span><span class="m">июн</span></div>
-            <div class="reg-info"><h4>Классика · 19:00</h4><p>Texas Hold'em NL · стол 3, место 6</p></div>
-            <span class="status-pill ok">Подтверждено</span>
-          </div>
-          <div class="reg-item">
-            <div class="reg-date"><span class="d">21</span><span class="m">июн</span></div>
-            <div class="reg-info"><h4>Баунти · 18:00</h4><p>Knockout · место распределяется</p></div>
-            <span class="status-pill wait">В ожидании</span>
-          </div>
-          <div class="reg-item">
-            <div class="reg-date"><span class="d">22</span><span class="m">июн</span></div>
-            <div class="reg-info"><h4>Баунти · 17:00</h4><p>Knockout · стол 1, место 2</p></div>
-            <span class="status-pill ok">Подтверждено</span>
-          </div>
-
-          <div class="panel-head" style="margin-top:34px;">
-            <h3>История турниров</h3>
-            <a href="index.html#rating">Весь рейтинг →</a>
-          </div>
-          <div class="history-item"><span>15 июн · Классика</span><span class="hi-place">2 место · +420</span></div>
-          <div class="history-item"><span>13 июн · Баунти</span><span class="hi-place">1 место · +560</span></div>
-          <div class="history-item"><span>11 июн · Классика</span><span class="hi-place">5 место · +180</span></div>
-          <div class="history-item"><span>08 июн · Классика</span><span class="hi-place">3 место · +320</span></div>
-          <div class="history-item"><span>06 июн · Баунти</span><span class="hi-place">7 место · +90</span></div>
+        <div class="field">
+          <label for="onbPhone">Телефон</label>
+          <input type="tel" id="onbPhone" placeholder="+7 900 000-00-00" autocomplete="tel" />
         </div>
-
-        <!-- Right: rank widget -->
-        <div>
-          <div class="panel" style="margin-bottom:22px;">
-            <div class="panel-head"><h3>Рейтинг месяца</h3></div>
-            <div class="rank-widget">
-              <div class="place">#1</div>
-              <div class="of">из 1 204 игроков</div>
-              <div class="progress"><i style="width:100%"></i></div>
-              <p class="hint">Ты лидер месяца 🏆 До конца сезона осталось <b>11 дней</b></p>
-            </div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-head"><h3>Достижения</h3></div>
-            <div class="history-item"><span>🔥 Серия из 5 ITM подряд</span><span class="hi-place">+200</span></div>
-            <div class="history-item"><span>🎯 10 нокаутов за вечер</span><span class="hi-place">+150</span></div>
-            <div class="history-item"><span>♠ Победа в Баунти</span><span class="hi-place">+560</span></div>
-            <div class="history-item"><span>🎓 Наставник новичка</span><span class="hi-place">+100</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="disclaimer" style="margin-top:30px;">
-        <span class="age-badge">18+</span>
-        <span>Это демонстрационный макет личного кабинета. Данные игрока, турниры и очки — примерные. Игра ведётся без денежных ставок.</span>
-      </div>
-
+        <label class="legal" style="display:flex;gap:10px;align-items:flex-start;text-align:left;cursor:pointer;margin:8px 0 18px;">
+          <input type="checkbox" id="onbConsent" style="margin-top:3px;flex:0 0 auto;" />
+          <span>Согласен на обработку персональных данных в соответствии с
+            <a href="consent.html" style="color:var(--accent);">согласием</a> и
+            <a href="privacy.html" style="color:var(--accent);">политикой конфиденциальности</a> (152-ФЗ).</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Продолжить</button>
+      </form>
     </div>
-  </main>
+  </div>
 
-  <script>
-    // Mock login flow — переключение между экраном входа и дашбордом
-    const authScreen = document.getElementById('authScreen');
-    const dash = document.getElementById('dash');
-    const header = document.getElementById('header');
+  <!-- ===== Дашборд (заполняется из account.js) ===== -->
+  <main class="dash active" id="view-dash" hidden></main>
 
-    function signIn() {
-      authScreen.classList.add('hidden');
-      dash.classList.add('active');
-      window.scrollTo(0, 0);
-    }
-
-    document.querySelectorAll('.oauth-btn').forEach(btn =>
-      btn.addEventListener('click', signIn)
-    );
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      signIn();
-    });
-
-    document.getElementById('logout').addEventListener('click', () => {
-      dash.classList.remove('active');
-      authScreen.classList.remove('hidden');
-    });
-
-    window.addEventListener('scroll', () => header.classList.toggle('scrolled', window.scrollY > 20), { passive: true });
-  </script>
+  <script src="assets/js/account.js"></script>
 </body>
 </html>

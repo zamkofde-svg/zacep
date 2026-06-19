@@ -30,6 +30,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 body {
   font-family: var(--font-body);
@@ -283,9 +284,7 @@ table.lb td.num { text-align: center; color: var(--muted); }
 .tg-login:hover { background: #1f97d4; border-color: #1f97d4; color: #fff; }
 
 /* Dashboard */
-.dash { display: none; padding-top: 110px; padding-bottom: 80px; }
-.dash.active { display: block; }
-.auth-screen.hidden { display: none; }
+.dash { padding-top: 110px; padding-bottom: 80px; }
 .dash-head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; margin-bottom: 36px; }
 .profile { display: flex; gap: 18px; align-items: center; }
 .avatar { width: 72px; height: 72px; border-radius: 18px; background: linear-gradient(135deg, var(--accent), var(--accent-deep)); display: grid; place-items: center; font-family: var(--font-head); font-weight: 700; font-size: 1.8rem; color: #0b1407; }

@@ -1,5 +1,7 @@
 .claude/
 .DS_Store
+# секреты бэкенда — НЕ коммитим
+api/config.php
 # исходники логотипа (рабочие копии лежат в assets/img/)
 /shodka zacep.png
 /zacep shodk1.png
