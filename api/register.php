@@ -43,4 +43,11 @@ $ins = $pdo->prepare("
 ");
 $ins->execute([$u['id'], $tid, $status]);
 
+// уведомление игроку в Telegram
+$when = date('d.m в H:i', strtotime((string) $tour['starts_at']));
+$msg = $status === 'confirmed'
+    ? "✅ Ты записан на турнир\n<b>" . htmlspecialchars($tour['title']) . "</b> · {$when}\nЖдём за столом ♠"
+    : "📝 Ты в листе ожидания на\n<b>" . htmlspecialchars($tour['title']) . "</b> · {$when}\nСообщим, как освободится место.";
+tg_send(!empty($u['tg_id']) ? (int) $u['tg_id'] : null, $msg);
+
 json_out(['ok' => true, 'status' => $status]);

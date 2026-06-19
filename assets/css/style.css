@@ -374,6 +374,34 @@ table.lb td.num { text-align: center; color: var(--muted); }
 .docs-links a { font-size: .85rem; color: var(--text); opacity: .8; }
 .docs-links a:hover { color: var(--accent); opacity: 1; }
 
+/* ---------- Admin ---------- */
+.admin-wrap { padding-top: 110px; padding-bottom: 80px; }
+.admin-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 14px; }
+.admin-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 8px; }
+.admin-form .full { grid-column: 1 / -1; }
+.admin-form select, .admin-form textarea, .admin-form input {
+  width: 100%; padding: 13px 15px; border-radius: var(--radius-sm);
+  background: var(--bg-2); border: 1px solid var(--line); color: var(--text);
+  font-family: var(--font-body); font-size: .92rem;
+}
+.admin-form textarea { min-height: 70px; resize: vertical; }
+.admin-form label.lbl { font-size: .78rem; color: var(--muted); display: block; margin-bottom: 6px; }
+.admin-form .check { display: flex; align-items: center; gap: 9px; font-size: .9rem; color: var(--muted); }
+.trow { display: flex; align-items: center; gap: 14px; padding: 15px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.trow:last-child { border-bottom: 0; }
+.trow .t-main { flex: 1; min-width: 200px; }
+.trow .t-main h4 { font-family: var(--font-head); font-size: 1rem; }
+.trow .t-main p { color: var(--muted); font-size: .85rem; }
+.t-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.badge-pub { font-size: .7rem; padding: 4px 10px; border-radius: 999px; font-family: var(--font-head); font-weight: 600; }
+.badge-pub.on { background: var(--accent-soft); color: var(--accent); }
+.badge-pub.off { background: rgba(255,92,92,.14); color: var(--danger); }
+.mini-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.mini-form input { padding: 9px 12px; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--line); color: var(--text); font-family: var(--font-body); font-size: .85rem; width: 96px; }
+.btn-danger { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.btn-danger:hover { border-color: var(--danger); color: var(--danger); }
+.regs-box { margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--line); }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 960px) {
   .hero-grid, .about-grid, .contact-grid { grid-template-columns: 1fr; }
@@ -395,6 +423,7 @@ table.lb td.num { text-align: center; color: var(--muted); }
   .dash-stats { grid-template-columns: 1fr; }
   .cta-banner { padding: 40px 24px; }
   .hero-stats { gap: 24px; }
+  .admin-form { grid-template-columns: 1fr; }
   /* На узких экранах прячем средние колонки таблицы рейтинга */
   table.lb th:nth-child(3), table.lb td:nth-child(3),
   table.lb th:nth-child(4), table.lb td:nth-child(4) { display: none; }

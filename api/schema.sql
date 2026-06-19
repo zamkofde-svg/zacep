@@ -51,6 +51,15 @@ CREATE TABLE IF NOT EXISTS results (
   CONSTRAINT fk_res_tour FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS user_achievements (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL,
+  code       VARCHAR(40) NOT NULL,
+  earned_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_ach (user_id, code),
+  CONSTRAINT fk_ach_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Демонстрационные турниры (можно удалить и завести свои)
 INSERT INTO tournaments (title, format, starts_at, buyin, stack, seats, description) VALUES
   ('Классика', 'classic', DATE_ADD(CURDATE(), INTERVAL 2 DAY) + INTERVAL 19 HOUR, 1500, 20000, 36, 'Texas Hold''em NL. Стартовый стек 20 000, уровни по 20 минут.'),

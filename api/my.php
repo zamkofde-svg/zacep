@@ -46,10 +46,23 @@ $totalPlayers = (int) $pdo->query('SELECT COUNT(*) FROM users WHERE onboarded = 
 $played = (int) ($pdo->query('SELECT COUNT(*) FROM results WHERE user_id = ' . $uid)->fetchColumn());
 $itm = (int) ($pdo->query('SELECT COUNT(*) FROM results WHERE user_id = ' . $uid . ' AND place IS NOT NULL AND place <= 9')->fetchColumn());
 
+// Ачивки игрока
+$achStmt = $pdo->prepare('SELECT code, earned_at FROM user_achievements WHERE user_id=? ORDER BY earned_at DESC');
+$achStmt->execute([$uid]);
+$defs = achievement_defs();
+$achievements = [];
+foreach ($achStmt->fetchAll() as $row) {
+    if (isset($defs[$row['code']])) {
+        [$emoji, $title] = $defs[$row['code']];
+        $achievements[] = ['code' => $row['code'], 'emoji' => $emoji, 'title' => $title, 'earned_at' => $row['earned_at']];
+    }
+}
+
 json_out([
     'user'          => public_user($u),
     'registrations' => $registrations,
     'history'       => $history,
+    'achievements'  => $achievements,
     'stats'         => [
         'month_points' => $monthPts,
         'place'        => (int) $place,

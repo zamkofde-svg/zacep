@@ -117,6 +117,92 @@ function public_user(array $u): array
     ];
 }
 
+/** Требовать права администратора. */
+function require_admin(): array
+{
+    $u = require_user();
+    if (empty($u['is_admin'])) {
+        json_out(['error' => 'forbidden'], 403);
+    }
+    return $u;
+}
+
+/** Отправить сообщение пользователю через бота (если он запускал бота). */
+function tg_send(?int $chatId, string $text): bool
+{
+    if (!$chatId) {
+        return false;
+    }
+    $c = cfg();
+    $url = 'https://api.telegram.org/bot' . $c['tg_bot_token'] . '/sendMessage';
+    $payload = http_build_query([
+        'chat_id'    => $chatId,
+        'text'       => $text,
+        'parse_mode' => 'HTML',
+        'disable_web_page_preview' => 'true',
+    ]);
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 8,
+    ]);
+    $res = curl_exec($ch);
+    $ok = $res !== false && (int) curl_getinfo($ch, CURLINFO_HTTP_CODE) === 200;
+    curl_close($ch);
+    return $ok;
+}
+
+/** Определения ачивок: code => [emoji, title, kind, n]. */
+function achievement_defs(): array
+{
+    return [
+        'first_tournament' => ['🎲', 'Первый турнир',  'played', 1],
+        'first_itm'        => ['💰', 'Первые призовые', 'itm',    1],
+        'first_win'        => ['♠️', 'Первая победа',   'win',    1],
+        'regular'          => ['🔥', 'Завсегдатай',     'played', 10],
+        'veteran'          => ['🏆', 'Ветеран',         'played', 25],
+        'legend'           => ['👑', 'Легенда стола',   'played', 50],
+    ];
+}
+
+/**
+ * Пересчитать ачивки игрока, начислить новые, отправить уведомления.
+ * Возвращает массив новых ачивок [['code','title','emoji'], ...].
+ */
+function award_achievements(int $userId): array
+{
+    $pdo = db();
+    $played = (int) $pdo->query('SELECT COUNT(*) FROM results WHERE user_id=' . $userId)->fetchColumn();
+    $itm    = (int) $pdo->query('SELECT COUNT(*) FROM results WHERE user_id=' . $userId . ' AND place IS NOT NULL AND place<=9')->fetchColumn();
+    $wins   = (int) $pdo->query('SELECT COUNT(*) FROM results WHERE user_id=' . $userId . ' AND place=1')->fetchColumn();
+    $metrics = ['played' => $played, 'itm' => $itm, 'win' => $wins];
+
+    $have = $pdo->prepare('SELECT code FROM user_achievements WHERE user_id=?');
+    $have->execute([$userId]);
+    $owned = array_column($have->fetchAll(), 'code');
+
+    $new = [];
+    $ins = $pdo->prepare('INSERT IGNORE INTO user_achievements (user_id, code) VALUES (?,?)');
+    foreach (achievement_defs() as $code => [$emoji, $title, $kind, $n]) {
+        if (($metrics[$kind] ?? 0) >= $n && !in_array($code, $owned, true)) {
+            $ins->execute([$userId, $code]);
+            $new[] = ['code' => $code, 'title' => $title, 'emoji' => $emoji];
+        }
+    }
+
+    if ($new) {
+        $uStmt = $pdo->prepare('SELECT tg_id FROM users WHERE id=?');
+        $uStmt->execute([$userId]);
+        $tg = $uStmt->fetchColumn();
+        foreach ($new as $a) {
+            tg_send($tg ? (int) $tg : null, "{$a['emoji']} <b>Новая ачивка!</b>\n«{$a['title']}» — так держать ♠");
+        }
+    }
+    return $new;
+}
+
 /**
  * Проверка подписи Telegram Login Widget.
  * Документация: https://core.telegram.org/widgets/login#checking-authorization

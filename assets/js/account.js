@@ -111,7 +111,10 @@ function renderDashboard(me, tournaments) {
             ${u.username ? `<div class="tg-tag">✈ @${esc(u.username)} · подключён</div>` : ''}
           </div>
         </div>
-        <button class="logout" id="logout">Выйти</button>
+        <div style="display:flex;gap:10px;">
+          ${u.is_admin ? '<a href="admin.html" class="btn btn-ghost btn-sm">⚙ Админка</a>' : ''}
+          <button class="logout" id="logout">Выйти</button>
+        </div>
       </div>
 
       <div class="dash-stats">
@@ -154,6 +157,12 @@ function renderDashboard(me, tournaments) {
               <div class="progress"><i style="width:${st.place && st.total_players ? Math.max(6, Math.round((1 - (st.place - 1) / st.total_players) * 100)) : 0}%"></i></div>
               <p class="hint">${st.month_points ? 'Очки идут в зачёт сезона. Играй больше — поднимайся выше.' : 'Сыграй турнир, чтобы попасть в рейтинг.'}</p>
             </div>
+          </div>
+          <div class="panel" style="margin-bottom:22px;">
+            <div class="panel-head"><h3>Достижения</h3></div>
+            ${(me.achievements && me.achievements.length)
+              ? me.achievements.map(a => `<div class="history-item"><span>${a.emoji} ${esc(a.title)}</span></div>`).join('')
+              : '<p class="muted" style="padding:8px 0;">Сыграй турниры — ачивки появятся здесь.</p>'}
           </div>
           <div class="panel">
             <div class="panel-head"><h3>Профиль</h3></div>
@@ -215,6 +224,12 @@ function startDemo() {
         { place: 5, points: 180, title: 'Классика', starts_at: iso(-9, 19) },
       ],
       stats: { month_points: 2480, place: 1, total_players: 1204, played: 12, itm: 8, itm_percent: 67 },
+      achievements: [
+        { emoji: '👑', title: 'Легенда стола' },
+        { emoji: '🔥', title: 'Завсегдатай' },
+        { emoji: '♠️', title: 'Первая победа' },
+        { emoji: '🎲', title: 'Первый турнир' },
+      ],
     };
     const tours = [
       { id: 1, title: 'Классика', starts_at: iso(2, 19), venue: 'ТРЦ «Грин Хаус», Тюмень', buyin: 1500, seats: 36, taken: 9, my_status: 'confirmed' },
