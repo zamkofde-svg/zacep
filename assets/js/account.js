@@ -42,6 +42,10 @@ async function api(path, opts = {}) {
 /* ---------------- Telegram Login Widget ---------------- */
 async function mountTelegramWidget() {
   const box = el('tg-widget');
+  if (window.__tgDiag) {
+    box.innerHTML = `<p class="legal" style="color:var(--danger);font-size:.8rem;">⚠ ${esc(window.__tgDiag)}</p>`;
+    return;
+  }
   try {
     const { tg_bot_username } = await api('config_public.php');
     if (!tg_bot_username) throw new Error('no-bot');
@@ -294,14 +298,21 @@ function startDemo() {
   bindPhoneAuth();
   // Telegram Mini App — авторизуемся автоматически по initData
   const tg = window.Telegram?.WebApp;
-  if (tg && tg.initData) {
+  if (tg) {
     try { tg.ready(); tg.expand(); } catch {}
-    try {
-      await api('auth_webapp.php', { method: 'POST', body: JSON.stringify({ initData: tg.initData }) });
-      BACKEND = true;
-      await route();
-      return;
-    } catch (e) { /* не получилось — обычный поток ниже */ }
+    if (tg.initData) {
+      try {
+        await api('auth_webapp.php', { method: 'POST', body: JSON.stringify({ initData: tg.initData }) });
+        BACKEND = true;
+        await route();
+        return;
+      } catch (e) {
+        window.__tgDiag = 'Подпись не принята: ' + (e.data?.error || e.message);
+      }
+    } else {
+      const has = !!(tg.initDataUnsafe && tg.initDataUnsafe.user);
+      window.__tgDiag = `Telegram передал пустой initData. platform=${tg.platform || '?'} v=${tg.version || '?'} user=${has ? 'есть' : 'нет'}`;
+    }
   }
   try {
     await api('me.php');       // проверяем, жив ли бэкенд
