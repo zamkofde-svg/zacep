@@ -87,7 +87,8 @@ switch ($action) {
             SELECT tp.player_number, tp.table_no, tp.seat_no, tp.status, tp.place,
                    u.id AS user_id, u.nick, u.real_name, u.first_name, u.username,
                    (SELECT COUNT(*) FROM entries e WHERE e.tournament_id=tp.tournament_id AND e.user_id=tp.user_id) AS entries,
-                   (SELECT COALESCE(SUM(e.amount),0) FROM entries e WHERE e.tournament_id=tp.tournament_id AND e.user_id=tp.user_id) AS paid
+                   (SELECT COALESCE(SUM(e.amount),0) FROM entries e WHERE e.tournament_id=tp.tournament_id AND e.user_id=tp.user_id) AS paid,
+                   (SELECT res.points FROM results res WHERE res.tournament_id=tp.tournament_id AND res.user_id=tp.user_id) AS points
             FROM tournament_players tp JOIN users u ON u.id=tp.user_id
             WHERE tp.tournament_id=?
             ORDER BY tp.player_number ASC
@@ -101,6 +102,7 @@ switch ($action) {
                 'seat_no' => $r['seat_no'] !== null ? (int) $r['seat_no'] : null,
                 'status' => $r['status'], 'place' => $r['place'] !== null ? (int) $r['place'] : null,
                 'entries' => (int) $r['entries'], 'paid' => (int) $r['paid'],
+                'points' => $r['points'] !== null ? (int) $r['points'] : null,
             ];
         }, $st->fetchAll());
 
@@ -332,6 +334,52 @@ switch ($action) {
         only_method('POST');
         $pdo->prepare("UPDATE tournaments SET status='finished', clock_paused=1 WHERE id=?")->execute([$tid]);
         json_out(['ok' => true]);
+        break;
+    }
+
+    case 'finalize': { // завершить турнир и начислить очки на финальный стол
+        only_method('POST');
+        if (!$tid) json_out(['error' => 'no_tournament'], 400);
+        $tour = $pdo->query("SELECT stack FROM tournaments WHERE id=$tid")->fetch();
+
+        // победитель = последний активный
+        $act = $pdo->query("SELECT user_id FROM tournament_players WHERE tournament_id=$tid AND status='active'")->fetchAll();
+        if (count($act) > 1) {
+            json_out(['error' => 'too_many_active', 'message' => 'Оставьте одного игрока (победителя) — отметьте вылеты остальных'], 409);
+        }
+        if (count($act) === 1) {
+            $pdo->prepare("UPDATE tournament_players SET status='busted', place=1, table_no=NULL, seat_no=NULL WHERE tournament_id=? AND user_id=?")
+                ->execute([$tid, (int) $act[0]['user_id']]);
+        }
+
+        $entries = (int) $pdo->query("SELECT COUNT(*) FROM entries WHERE tournament_id=$tid")->fetchColumn();
+        $stack   = (int) $tour['stack'];
+        $pool    = (int) round($entries * $stack / 1000); // банк очков = фишки в игре ÷ 1000
+        $totalPlayers = (int) $pdo->query("SELECT COUNT(*) FROM tournament_players WHERE tournament_id=$tid")->fetchColumn();
+
+        $curve = [30, 20, 14, 11, 8, 6, 5, 4, 2]; // доли мест 1..9, %
+        $paid = max(1, min(9, $totalPlayers));
+        $norm = array_sum(array_slice($curve, 0, $paid));
+
+        $awarded = [];
+        for ($p = 1; $p <= $paid; $p++) {
+            $pts = (int) round($pool * $curve[$p - 1] / $norm);
+            $u = $pdo->prepare("SELECT user_id FROM tournament_players WHERE tournament_id=? AND place=? LIMIT 1");
+            $u->execute([$tid, $p]);
+            $uid = (int) ($u->fetchColumn() ?: 0);
+            if (!$uid) continue;
+            $pdo->prepare("INSERT INTO results (user_id,tournament_id,place,points) VALUES (?,?,?,?)
+                           ON DUPLICATE KEY UPDATE place=VALUES(place), points=VALUES(points)")
+                ->execute([$uid, $tid, $p, $pts]);
+            // уведомление
+            $tg = $pdo->query("SELECT tg_id FROM users WHERE id=$uid")->fetchColumn();
+            tg_send($tg ? (int) $tg : null, "🏁 Турнир завершён!\n{$p} место · <b>+{$pts}</b> очков в рейтинг ♠");
+            award_achievements($uid);
+            $awarded[] = ['place' => $p, 'user_id' => $uid, 'points' => $pts];
+        }
+
+        $pdo->prepare("UPDATE tournaments SET status='finished', clock_paused=1 WHERE id=?")->execute([$tid]);
+        json_out(['ok' => true, 'pool' => $pool, 'paid_places' => $paid, 'awarded' => $awarded]);
         break;
     }
 

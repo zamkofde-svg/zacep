@@ -53,6 +53,20 @@ CREATE TABLE IF NOT EXISTS tournament_players (
   CONSTRAINT fk_tp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS tournament_levels (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  tournament_id INT NOT NULL,
+  idx INT NOT NULL,
+  sb INT NOT NULL DEFAULT 0,
+  bb INT NOT NULL DEFAULT 0,
+  ante INT NOT NULL DEFAULT 0,
+  duration_min INT NOT NULL DEFAULT 20,
+  is_break TINYINT(1) NOT NULL DEFAULT 0,
+  title VARCHAR(64) NULL,
+  UNIQUE KEY uniq_lvl (tournament_id, idx),
+  CONSTRAINT fk_lvl_tour FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS entries (
   id INT AUTO_INCREMENT PRIMARY KEY,
   tournament_id INT NOT NULL,

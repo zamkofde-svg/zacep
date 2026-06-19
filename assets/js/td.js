@@ -169,7 +169,14 @@ function render(d) {
   document.getElementById('clkResume')?.addEventListener('click', () => act(() => td('resume', {})));
   document.getElementById('clkPrev')?.addEventListener('click', () => act(() => td('prev_level', {})));
   document.getElementById('clkNextBtn')?.addEventListener('click', () => act(() => td('next_level', {})));
-  document.getElementById('clkFinish')?.addEventListener('click', () => { if (confirm('Завершить турнир? Часы остановятся.')) act(() => td('finish', {})); });
+  document.getElementById('clkFinish')?.addEventListener('click', async () => {
+    if (!confirm('Завершить турнир и начислить очки на финальный стол? Оставь в игре только победителя.')) return;
+    try {
+      const r = await td('finalize', {});
+      alert(`🏁 Турнир завершён!\nБанк: ${fmt(r.pool)} очков, роздано на ${r.paid_places} мест.`);
+      await load();
+    } catch (e) { alert(e.data?.message || 'Не удалось завершить'); }
+  });
   document.getElementById('lvlDefault')?.addEventListener('click', () => { if (confirm('Применить стандартную структуру блайндов? Текущая будет заменена.')) act(() => td('levels_default', {})); });
   startClockPoll();
 
@@ -210,7 +217,7 @@ function rowHTML(p) {
     <div class="reg-date" style="width:48px;min-width:48px;"><span class="d" style="font-size:1.2rem;">${p.number}</span></div>
     <div class="t-main">
       <h4>${esc(p.name)} ${busted ? `<span class="status-pill wait">вылет · ${p.place || '—'} место</span>` : ''}</h4>
-      <p>${seat} · закупов: ${p.entries} · оплачено ${fmt(p.paid)} ₽</p>
+      <p>${seat} · закупов: ${p.entries} · оплачено ${fmt(p.paid)} ₽${p.points != null ? ` · <span style="color:var(--accent)">+${fmt(p.points)} очков</span>` : ''}</p>
     </div>
     <div class="t-actions">
       ${busted
