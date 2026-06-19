@@ -46,6 +46,21 @@ $totalPlayers = (int) $pdo->query('SELECT COUNT(*) FROM users WHERE onboarded = 
 $played = (int) ($pdo->query('SELECT COUNT(*) FROM results WHERE user_id = ' . $uid)->fetchColumn());
 $itm = (int) ($pdo->query('SELECT COUNT(*) FROM results WHERE user_id = ' . $uid . ' AND place IS NOT NULL AND place <= 9')->fetchColumn());
 
+// Текущая посадка за столом (активные турниры)
+$seatStmt = $pdo->prepare("
+  SELECT tp.player_number, tp.table_no, tp.seat_no, tp.status, t.title, t.starts_at
+  FROM tournament_players tp JOIN tournaments t ON t.id = tp.tournament_id
+  WHERE tp.user_id = ? AND tp.status = 'active' AND t.status IN ('running','final')
+  ORDER BY t.starts_at ASC
+");
+$seatStmt->execute([$uid]);
+$seatings = array_map(fn($r) => [
+    'number' => (int) $r['player_number'],
+    'table_no' => $r['table_no'] !== null ? (int) $r['table_no'] : null,
+    'seat_no' => $r['seat_no'] !== null ? (int) $r['seat_no'] : null,
+    'title' => $r['title'],
+], $seatStmt->fetchAll());
+
 // Ачивки игрока
 $achStmt = $pdo->prepare('SELECT code, earned_at FROM user_achievements WHERE user_id=? ORDER BY earned_at DESC');
 $achStmt->execute([$uid]);
@@ -61,6 +76,7 @@ foreach ($achStmt->fetchAll() as $row) {
 json_out([
     'user'          => public_user($u),
     'registrations' => $registrations,
+    'seatings'      => $seatings,
     'history'       => $history,
     'achievements'  => $achievements,
     'stats'         => [

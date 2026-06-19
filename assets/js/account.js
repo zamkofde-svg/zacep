@@ -150,6 +150,15 @@ function renderDashboard(me, tournaments) {
         </div>
       </div>
 
+      ${(me.seatings && me.seatings.length) ? me.seatings.map(s => `
+      <div class="cta-banner reveal in" style="padding:26px 30px;text-align:left;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+        <div>
+          <div style="font-family:var(--font-head);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.7);">Турнир идёт · ${esc(s.title)}</div>
+          <div style="font-family:var(--font-head);font-weight:700;color:#fff;font-size:1.6rem;margin-top:4px;">Твой бэйдж №${s.number}</div>
+        </div>
+        <div style="font-family:var(--font-head);font-weight:700;color:#fff;font-size:1.4rem;">${s.table_no ? `Стол ${s.table_no} · место ${s.seat_no}` : 'Ждём рассадку'}</div>
+      </div>`).join('') : ''}
+
       <div class="dash-stats">
         <div class="dstat"><div class="ic">🏅</div><div class="n">${st.place ? '#' + st.place : '—'}</div><div class="l">Место в рейтинге месяца</div><div class="delta">из ${fmt(st.total_players)} игроков</div></div>
         <div class="dstat"><div class="ic">⭐</div><div class="n">${fmt(st.month_points)}</div><div class="l">Очков в этом месяце</div></div>

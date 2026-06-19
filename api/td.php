@@ -39,6 +39,43 @@ function resolve_user(PDO $pdo, array $body): int
     json_out(['error' => 'no_player', 'message' => 'Укажите игрока, телефон или ник'], 422);
 }
 
+/** user_id по body: явный user_id или номер бэйджа в этом турнире. */
+function uid_from(PDO $pdo, int $tid, array $body): int
+{
+    $uid = (int) ($body['user_id'] ?? 0);
+    if ($uid) return $uid;
+    $num = (int) ($body['number'] ?? 0);
+    if ($num) {
+        $r = $pdo->prepare('SELECT user_id FROM tournament_players WHERE tournament_id=? AND player_number=?');
+        $r->execute([$tid, $num]);
+        $row = $r->fetch();
+        return $row ? (int) $row['user_id'] : 0;
+    }
+    return 0;
+}
+
+/** Посадить игрока на первое свободное место (для поздних чек-инов и перезаходов). */
+function assign_open_seat(PDO $pdo, int $tid, int $size, int $uid): void
+{
+    // существующие столы с числом активных игроков
+    $rows = $pdo->query("SELECT table_no, COUNT(*) c FROM tournament_players
+        WHERE tournament_id=$tid AND status='active' AND table_no IS NOT NULL
+        GROUP BY table_no ORDER BY c ASC")->fetchAll();
+    if (!$rows) return; // рассадки ещё не было — сажать некуда
+    $table = null;
+    foreach ($rows as $r) { if ((int) $r['c'] < $size) { $table = (int) $r['table_no']; break; } }
+    if ($table === null) {
+        $table = (int) $pdo->query("SELECT COALESCE(MAX(table_no),0)+1 FROM tournament_players WHERE tournament_id=$tid")->fetchColumn();
+    }
+    // первое свободное место за столом
+    $taken = $pdo->prepare("SELECT seat_no FROM tournament_players WHERE tournament_id=? AND table_no=? AND status='active' AND seat_no IS NOT NULL");
+    $taken->execute([$tid, $table]);
+    $busy = array_map('intval', array_column($taken->fetchAll(), 'seat_no'));
+    $seat = 1; while (in_array($seat, $busy, true)) $seat++;
+    $pdo->prepare("UPDATE tournament_players SET table_no=?, seat_no=? WHERE tournament_id=? AND user_id=?")
+        ->execute([$table, $seat, $tid, $uid]);
+}
+
 switch ($action) {
 
     case 'players': {
@@ -116,16 +153,18 @@ switch ($action) {
             ->execute([$tid, $uid, $num]);
         $pdo->prepare('INSERT INTO entries (tournament_id, user_id, kind, amount) VALUES (?,?,\'buyin\',?)')
             ->execute([$tid, $uid, $amount]);
+        $tsize = (int) ($pdo->query("SELECT table_size FROM tournaments WHERE id=$tid")->fetchColumn() ?: 9);
+        assign_open_seat($pdo, $tid, $tsize, $uid); // посадить, если рассадка уже сделана
         json_out(['ok' => true, 'player_number' => $num, 'user_id' => $uid]);
         break;
     }
 
     case 'entry': { // перезаход или аддон
         only_method('POST');
-        $uid  = (int) ($body['user_id'] ?? 0);
+        $uid  = uid_from($pdo, $tid, $body);
         $kind = in_array($body['kind'] ?? '', ['reentry', 'addon'], true) ? $body['kind'] : 'reentry';
         $amount = (int) ($body['amount'] ?? 0);
-        if (!$tid || !$uid) json_out(['error' => 'bad_input'], 422);
+        if (!$tid || !$uid) json_out(['error' => 'no_player', 'message' => 'Игрок с таким номером не найден'], 404);
         $tp = $pdo->prepare('SELECT * FROM tournament_players WHERE tournament_id=? AND user_id=?');
         $tp->execute([$tid, $uid]);
         if (!$tp->fetch()) json_out(['error' => 'not_player', 'message' => 'Игрока нет на турнире — сначала чек-ин'], 404);
@@ -135,6 +174,8 @@ switch ($action) {
         if ($kind === 'reentry') {
             $pdo->prepare("UPDATE tournament_players SET status='active', place=NULL WHERE tournament_id=? AND user_id=?")
                 ->execute([$tid, $uid]);
+            $tsize = (int) ($pdo->query("SELECT table_size FROM tournaments WHERE id=$tid")->fetchColumn() ?: 9);
+            assign_open_seat($pdo, $tid, $tsize, $uid); // пересадить на свободное место
         }
         json_out(['ok' => true]);
         break;
@@ -142,10 +183,10 @@ switch ($action) {
 
     case 'bust': { // вылет → авто-место по порядку выбывания
         only_method('POST');
-        $uid = (int) ($body['user_id'] ?? 0);
-        if (!$tid || !$uid) json_out(['error' => 'bad_input'], 422);
+        $uid = uid_from($pdo, $tid, $body);
+        if (!$tid || !$uid) json_out(['error' => 'no_player', 'message' => 'Игрок с таким номером не найден'], 404);
         $place = (int) $pdo->query("SELECT COUNT(*) FROM tournament_players WHERE tournament_id=$tid AND status='active'")->fetchColumn();
-        $pdo->prepare("UPDATE tournament_players SET status='busted', place=? WHERE tournament_id=? AND user_id=? AND status='active'")
+        $pdo->prepare("UPDATE tournament_players SET status='busted', place=?, table_no=NULL, seat_no=NULL WHERE tournament_id=? AND user_id=? AND status='active'")
             ->execute([$place, $tid, $uid]);
         json_out(['ok' => true, 'place' => $place]);
         break;
@@ -153,9 +194,47 @@ switch ($action) {
 
     case 'reactivate': { // отмена вылета (исправление)
         only_method('POST');
-        $uid = (int) ($body['user_id'] ?? 0);
+        $uid = uid_from($pdo, $tid, $body);
+        if (!$uid) json_out(['error' => 'no_player'], 404);
         $pdo->prepare("UPDATE tournament_players SET status='active', place=NULL WHERE tournament_id=? AND user_id=?")
             ->execute([$tid, $uid]);
+        $tsize = (int) ($pdo->query("SELECT table_size FROM tournaments WHERE id=$tid")->fetchColumn() ?: 9);
+        assign_open_seat($pdo, $tid, $tsize, $uid);
+        json_out(['ok' => true]);
+        break;
+    }
+
+    case 'seat_draw': { // жеребьёвка/пересборка рассадки активных игроков
+        only_method('POST');
+        if (!$tid) json_out(['error' => 'no_tournament'], 400);
+        $size = (int) ($pdo->query("SELECT table_size FROM tournaments WHERE id=$tid")->fetchColumn() ?: 9);
+        $ids = array_map('intval', array_column(
+            $pdo->query("SELECT user_id FROM tournament_players WHERE tournament_id=$tid AND status='active' ORDER BY RAND()")->fetchAll(),
+            'user_id'
+        ));
+        // сброс рассадки
+        $pdo->query("UPDATE tournament_players SET table_no=NULL, seat_no=NULL WHERE tournament_id=$tid");
+        $n = count($ids);
+        $tables = max(1, (int) ceil($n / $size));
+        $upd = $pdo->prepare("UPDATE tournament_players SET table_no=?, seat_no=? WHERE tournament_id=? AND user_id=?");
+        $seatCounter = array_fill(1, $tables, 0);
+        foreach ($ids as $i => $uid) {
+            $t = ($i % $tables) + 1;          // раскидываем по кругу — столы ровные
+            $seat = ++$seatCounter[$t];
+            $upd->execute([$t, $seat, $tid, $uid]);
+        }
+        json_out(['ok' => true, 'tables' => $tables, 'seated' => $n]);
+        break;
+    }
+
+    case 'move': { // ручной перенос игрока за стол/место
+        only_method('POST');
+        $uid = uid_from($pdo, $tid, $body);
+        $table = (int) ($body['table_no'] ?? 0) ?: null;
+        $seat  = (int) ($body['seat_no'] ?? 0) ?: null;
+        if (!$uid) json_out(['error' => 'no_player'], 404);
+        $pdo->prepare("UPDATE tournament_players SET table_no=?, seat_no=? WHERE tournament_id=? AND user_id=?")
+            ->execute([$table, $seat, $tid, $uid]);
         json_out(['ok' => true]);
         break;
     }

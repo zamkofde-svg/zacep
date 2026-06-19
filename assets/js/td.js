@@ -47,6 +47,21 @@ function render(d) {
     </div>
 
     <div class="panel" style="margin-bottom:22px;">
+      <div class="panel-head"><h3>⚡ По номеру бэйджа</h3></div>
+      <div class="mini-form">
+        <input id="qNum" type="number" inputmode="numeric" placeholder="№" style="width:90px;font-size:1.2rem;font-family:var(--font-head);">
+        <button class="btn btn-sm btn-danger" id="qBust">Вылет</button>
+        <button class="btn btn-primary btn-sm" id="qReentry">+ перезаход</button>
+        <button class="btn btn-ghost btn-sm" id="qAddon">+ аддон</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:22px;">
+      <div class="panel-head"><h3>Рассадка</h3><button class="btn btn-primary btn-sm" id="drawBtn">🎲 Жеребьёвка / пересобрать</button></div>
+      <div id="seatMap">${seatMapHTML(d.players)}</div>
+    </div>
+
+    <div class="panel" style="margin-bottom:22px;">
       <div class="panel-head"><h3>Чек-ин игрока</h3></div>
       ${d.pending.length ? `
         <div class="mini-form" style="margin-bottom:14px;">
@@ -87,6 +102,13 @@ function render(d) {
     await act(() => td('checkin', { real_name, nick, phone, amount: Number(document.getElementById('ciAmt').value) }));
   });
 
+  // быстрые действия по номеру бэйджа
+  const qn = () => { const n = Number(document.getElementById('qNum').value); if (!n) { alert('Введите номер бэйджа'); return null; } return n; };
+  document.getElementById('qBust').addEventListener('click', () => { const n = qn(); if (n && confirm(`Вылет игрока №${n}?`)) act(() => td('bust', { number: n })); });
+  document.getElementById('qReentry').addEventListener('click', () => { const n = qn(); if (n) act(() => td('entry', { number: n, kind: 'reentry', amount: T.buyin })); });
+  document.getElementById('qAddon').addEventListener('click', () => { const n = qn(); if (n) act(() => td('entry', { number: n, kind: 'addon', amount: T.buyin })); });
+  document.getElementById('drawBtn').addEventListener('click', () => { if (confirm('Пересобрать рассадку активных игроков? Текущие места изменятся.')) act(() => td('seat_draw', {})); });
+
   document.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {
     const uid = Number(b.dataset.uid), a = b.dataset.act;
     if (a === 'bust') { if (!confirm('Отметить вылет игрока?')) return; act(() => td('bust', { user_id: uid })); }
@@ -94,6 +116,27 @@ function render(d) {
     else if (a === 'reentry') act(() => td('entry', { user_id: uid, kind: 'reentry', amount: T.buyin }));
     else if (a === 'addon') act(() => td('entry', { user_id: uid, kind: 'addon', amount: T.buyin }));
   }));
+}
+
+function seatMapHTML(players) {
+  const active = players.filter(p => p.status === 'active');
+  const seated = active.filter(p => p.table_no);
+  const unseated = active.filter(p => !p.table_no);
+  if (!seated.length && !unseated.length) return '<p class="muted">Нет активных игроков.</p>';
+  const tables = {};
+  seated.forEach(p => { (tables[p.table_no] = tables[p.table_no] || []).push(p); });
+  let html = '';
+  if (!seated.length) html += '<p class="muted">Рассадка ещё не сделана — нажми «Жеребьёвка».</p>';
+  html += Object.keys(tables).map(Number).sort((a, b) => a - b).map(tn => {
+    const ps = tables[tn].sort((a, b) => (a.seat_no || 0) - (b.seat_no || 0));
+    return `<div style="margin-bottom:14px;">
+      <div style="font-family:var(--font-head);font-weight:600;color:var(--accent);margin-bottom:6px;">Стол ${tn} <span class="muted" style="font-weight:400;">· ${ps.length} игр.</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${ps.map(p => `<span style="background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:.88rem;">${p.seat_no}. <b>№${p.number}</b> ${esc(p.name)}</span>`).join('')}
+      </div></div>`;
+  }).join('');
+  if (unseated.length) html += `<p class="muted" style="margin-top:8px;">Без места (${unseated.length}): ${unseated.map(p => '№' + p.number).join(', ')} — нажми «Жеребьёвка».</p>`;
+  return html;
 }
 
 function rowHTML(p) {
