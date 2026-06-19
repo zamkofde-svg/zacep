@@ -1,0 +1,26 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Зацеп имеется">
+  <defs><style>.g{fill:#8cf55b}.d{fill:#17171b}</style></defs>
+  <!-- chip base -->
+  <circle cx="50" cy="50" r="49" class="d"/>
+  <!-- green edge segments -->
+  <circle cx="50" cy="50" r="42" fill="none" stroke="#8cf55b" stroke-width="11"
+          stroke-dasharray="16.5 16.49" stroke-dashoffset="8.25"/>
+  <!-- inner disc + ring -->
+  <circle cx="50" cy="50" r="33" class="d"/>
+  <circle cx="50" cy="50" r="33" fill="none" stroke="#8cf55b" stroke-width="1.1" opacity=".5"/>
+  <!-- 4-leaf pinwheel emblem -->
+  <g class="g">
+    <g>
+      <path d="M50 49 C49.5 39 54 31 64 30 C66 41 61.5 48 50 49 Z"/>
+    </g>
+    <g transform="rotate(90 50 50)">
+      <path d="M50 49 C49.5 39 54 31 64 30 C66 41 61.5 48 50 49 Z"/>
+    </g>
+    <g transform="rotate(180 50 50)">
+      <path d="M50 49 C49.5 39 54 31 64 30 C66 41 61.5 48 50 49 Z"/>
+    </g>
+    <g transform="rotate(270 50 50)">
+      <path d="M50 49 C49.5 39 54 31 64 30 C66 41 61.5 48 50 49 Z"/>
+    </g>
+  </g>
+</svg>
