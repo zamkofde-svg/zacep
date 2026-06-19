@@ -100,6 +100,7 @@ async function loadTournaments() {
         <p>${FORMATS[t.format]} · ${dtHuman(t.starts_at)} · ${t.taken}/${t.seats} мест · взнос ${fmt(t.buyin)} ₽</p>
       </div>
       <div class="t-actions">
+        <a class="btn btn-primary btn-sm" href="td.html?t=${t.id}">▶ Вести</a>
         <button class="btn btn-ghost btn-sm act-regs">Записи</button>
         <button class="btn btn-ghost btn-sm act-edit">Изменить</button>
         <button class="btn btn-sm btn-danger act-del">Удалить</button>

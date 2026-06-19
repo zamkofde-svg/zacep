@@ -28,7 +28,41 @@ CREATE TABLE IF NOT EXISTS tournaments (
   seats        INT NOT NULL DEFAULT 36,
   description  TEXT,
   is_published TINYINT(1) NOT NULL DEFAULT 1,
+  status       ENUM('scheduled','running','final','finished') NOT NULL DEFAULT 'scheduled',
+  table_size   INT NOT NULL DEFAULT 9,
+  current_level INT NOT NULL DEFAULT 0,
+  level_started_at DATETIME NULL,
+  clock_paused TINYINT(1) NOT NULL DEFAULT 0,
+  paused_left  INT NULL,
   created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS tournament_players (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  tournament_id INT NOT NULL,
+  user_id INT NOT NULL,
+  player_number INT NOT NULL,
+  table_no INT NULL,
+  seat_no INT NULL,
+  status ENUM('active','busted') NOT NULL DEFAULT 'active',
+  place INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_tp (tournament_id, user_id),
+  UNIQUE KEY uniq_num (tournament_id, player_number),
+  CONSTRAINT fk_tp_tour FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
+  CONSTRAINT fk_tp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS entries (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  tournament_id INT NOT NULL,
+  user_id INT NOT NULL,
+  kind ENUM('buyin','reentry','addon') NOT NULL DEFAULT 'buyin',
+  amount INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_entries (tournament_id, user_id),
+  CONSTRAINT fk_en_tour FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
+  CONSTRAINT fk_en_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS registrations (
