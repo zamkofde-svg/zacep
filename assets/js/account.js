@@ -292,6 +292,17 @@ function startDemo() {
 (async function init() {
   bindOnboarding();
   bindPhoneAuth();
+  // Telegram Mini App — авторизуемся автоматически по initData
+  const tg = window.Telegram?.WebApp;
+  if (tg && tg.initData) {
+    try { tg.ready(); tg.expand(); } catch {}
+    try {
+      await api('auth_webapp.php', { method: 'POST', body: JSON.stringify({ initData: tg.initData }) });
+      BACKEND = true;
+      await route();
+      return;
+    } catch (e) { /* не получилось — обычный поток ниже */ }
+  }
   try {
     await api('me.php');       // проверяем, жив ли бэкенд
     BACKEND = true;

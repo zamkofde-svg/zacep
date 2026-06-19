@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Зацеп имеется</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/png" href="assets/img/favicon.png" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Unbounded:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+  <header class="header scrolled" id="header">
+    <div class="wrap nav">
+      <span class="logo">
+        <img class="logo-mark" src="assets/img/logo-mark.png" alt="Зацеп имеется" />
+        <span>Зацеп <span class="accent">имеется</span></span>
+      </span>
+    </div>
+  </header>
+
+  <!-- Экран входа (виден только если открыть вне Telegram) -->
+  <div class="auth-screen" id="view-auth">
+    <div class="auth-card">
+      <h2 style="text-align:center;">Личный кабинет</h2>
+      <p class="sub">Откройте эту страницу из бота <b>@zacepfun_bot</b> в Telegram.</p>
+      <div id="tg-widget" style="display:flex;justify-content:center;min-height:52px;"></div>
+      <div class="auth-divider">или по телефону</div>
+      <form id="phoneLoginForm">
+        <div class="field"><label for="liPhone">Телефон</label><input type="tel" id="liPhone" placeholder="+7 900 000-00-00" autocomplete="tel" /></div>
+        <div class="field"><label for="liPass">Пароль</label><input type="password" id="liPass" placeholder="••••••••" autocomplete="current-password" /></div>
+        <button type="submit" class="btn btn-primary btn-block">Войти</button>
+        <p class="legal" style="text-align:center;margin-top:14px;">Нет аккаунта? <a href="#" id="toRegister" style="color:var(--accent);">Зарегистрироваться</a></p>
+      </form>
+      <form id="phoneRegForm" hidden>
+        <div class="field"><label for="rgName">Фамилия и имя</label><input type="text" id="rgName" placeholder="Иванов Иван" maxlength="100" /></div>
+        <div class="field"><label for="rgNick">Покерный ник</label><input type="text" id="rgNick" placeholder="например, Рейз" maxlength="32" /></div>
+        <div class="field"><label for="rgPhone">Телефон</label><input type="tel" id="rgPhone" placeholder="+7 900 000-00-00" autocomplete="tel" /></div>
+        <div class="field"><label for="rgPass">Пароль</label><input type="password" id="rgPass" placeholder="минимум 6 символов" autocomplete="new-password" /></div>
+        <label class="legal" style="display:flex;gap:10px;align-items:flex-start;text-align:left;cursor:pointer;margin:8px 0 16px;">
+          <input type="checkbox" id="rgConsent" style="margin-top:3px;flex:0 0 auto;" />
+          <span>Мне есть 18 лет, согласен на обработку ПД (<a href="consent.html" style="color:var(--accent);">152-ФЗ</a>) и принимаю <a href="rules.html" style="color:var(--accent);">правила</a>.</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Зарегистрироваться</button>
+        <p class="legal" style="text-align:center;margin-top:14px;">Уже есть аккаунт? <a href="#" id="toLogin" style="color:var(--accent);">Войти</a></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Онбординг -->
+  <div class="auth-screen" id="view-onboarding" hidden>
+    <div class="auth-card">
+      <h2 style="text-align:center;">Прежде чем начать</h2>
+      <p class="sub">Для записи на турниры и рейтинга нужен твой покерный ник и телефон.</p>
+      <form id="onboardingForm">
+        <div class="field"><label for="onbName">Фамилия и имя</label><input type="text" id="onbName" placeholder="например, Иванов Иван" maxlength="100" required /></div>
+        <div class="field"><label for="onbNick">Покерный ник</label><input type="text" id="onbNick" placeholder="например, Рейз" maxlength="32" required /></div>
+        <div class="field"><label for="onbPhone">Телефон</label><input type="tel" id="onbPhone" placeholder="+7 900 000-00-00" autocomplete="tel" /></div>
+        <label class="legal" style="display:flex;gap:10px;align-items:flex-start;text-align:left;cursor:pointer;margin:8px 0 18px;">
+          <input type="checkbox" id="onbConsent" style="margin-top:3px;flex:0 0 auto;" />
+          <span>Согласен на обработку персональных данных (<a href="consent.html" style="color:var(--accent);">152-ФЗ</a>).</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Продолжить</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Дашборд -->
+  <main class="dash active" id="view-dash" hidden></main>
+
+  <script src="assets/js/account.js"></script>
+</body>
+</html>
