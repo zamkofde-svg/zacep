@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Табло — Зацеп имеется</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/png" href="assets/img/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Unbounded:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    body { overflow: hidden; }
+    .live { min-height: 100vh; display: flex; flex-direction: column; padding: 3vh 4vw; }
+    .live-top { display: flex; justify-content: space-between; align-items: center; }
+    .live-top .ttl { font-family: var(--font-head); font-weight: 700; font-size: clamp(1.4rem, 3vw, 2.4rem); }
+    .live-top .st { font-family: var(--font-head); font-size: clamp(.9rem,1.6vw,1.2rem); color: var(--accent); letter-spacing: .12em; text-transform: uppercase; }
+    .live-mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5vh; }
+    .lvl { font-family: var(--font-head); font-size: clamp(1rem,2.2vw,1.6rem); color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+    .timer { font-family: var(--font-head); font-weight: 800; font-size: clamp(5rem, 22vw, 18rem); line-height: .9; color: var(--accent); text-shadow: 0 0 60px rgba(140,245,91,.35); }
+    .timer.paused { color: var(--muted); animation: blink 1.4s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: .4; } }
+    .blinds { font-family: var(--font-head); font-weight: 700; font-size: clamp(2rem, 7vw, 5.5rem); }
+    .blinds small { color: var(--muted); font-size: .4em; font-weight: 600; }
+    .nextb { font-family: var(--font-head); font-size: clamp(1rem,2.4vw,1.8rem); color: var(--muted); }
+    .live-bot { display: grid; grid-template-columns: repeat(4,1fr); gap: 2vw; }
+    .lt { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 2vh 1.5vw; text-align: center; }
+    .lt .n { font-family: var(--font-head); font-weight: 700; font-size: clamp(1.6rem,4vw,3rem); color: var(--accent); }
+    .lt .l { color: var(--muted); font-size: clamp(.8rem,1.4vw,1.1rem); }
+    .break-big { font-family: var(--font-head); font-weight: 800; font-size: clamp(2.5rem,9vw,7rem); color: var(--accent); letter-spacing: .05em; }
+    .idle { color: var(--muted); font-family: var(--font-head); font-size: clamp(1.5rem,4vw,3rem); text-align:center; }
+    @media (max-width:700px){ .live-bot{ grid-template-columns:repeat(2,1fr); } }
+  </style>
+</head>
+<body>
+  <div class="live">
+    <div class="live-top">
+      <div class="ttl"><span class="accent">●</span> <span id="ttl">Зацеп имеется</span></div>
+      <div class="st" id="st">—</div>
+    </div>
+    <div class="live-mid" id="mid"><div class="idle">Загрузка…</div></div>
+    <div class="live-bot">
+      <div class="lt"><div class="n" id="mActive">—</div><div class="l">в игре</div></div>
+      <div class="lt"><div class="n" id="mEntries">—</div><div class="l">закупов</div></div>
+      <div class="lt"><div class="n" id="mAvg">—</div><div class="l">средний стек</div></div>
+      <div class="lt"><div class="n" id="mChips">—</div><div class="l">фишек в игре</div></div>
+    </div>
+  </div>
+  <script src="assets/js/live.js"></script>
+</body>
+</html>

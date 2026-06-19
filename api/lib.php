@@ -130,6 +130,88 @@ function normalize_phone(string $raw): string
     return $d === '' ? '' : '+' . $d;
 }
 
+/** Стандартная структура блайндов (можно потом отредактировать). */
+function default_levels(): array
+{
+    // [sb, bb, ante, minutes, is_break, title]
+    return [
+        [100, 200, 0, 20, 0, null],
+        [200, 400, 0, 20, 0, null],
+        [300, 600, 600, 20, 0, null],
+        [500, 1000, 1000, 20, 0, null],
+        [0, 0, 0, 10, 1, 'Перерыв'],
+        [700, 1400, 1400, 20, 0, null],
+        [1000, 2000, 2000, 20, 0, null],
+        [1500, 3000, 3000, 20, 0, null],
+        [2000, 4000, 4000, 20, 0, null],
+        [0, 0, 0, 10, 1, 'Перерыв'],
+        [3000, 6000, 6000, 20, 0, null],
+        [5000, 10000, 10000, 20, 0, null],
+        [8000, 16000, 16000, 20, 0, null],
+        [12000, 24000, 24000, 20, 0, null],
+        [20000, 40000, 40000, 20, 0, null],
+    ];
+}
+
+/** Состояние часов турнира (с ленивой авто-сменой уровня). Tz-безопасно через MySQL. */
+function tournament_clock(PDO $pdo, int $tid): array
+{
+    $t = $pdo->prepare("SELECT status, current_level, clock_paused, paused_left,
+        TIMESTAMPDIFF(SECOND, level_started_at, NOW()) AS elapsed FROM tournaments WHERE id=?");
+    $t->execute([$tid]);
+    $tr = $t->fetch();
+    if (!$tr) return ['status' => 'unknown', 'has_levels' => false];
+
+    $levels = $pdo->query("SELECT idx,sb,bb,ante,duration_min,is_break,title FROM tournament_levels WHERE tournament_id=$tid ORDER BY idx")->fetchAll();
+    $total = count($levels);
+    $base = ['status' => $tr['status'], 'has_levels' => $total > 0, 'total' => $total,
+             'level' => (int) $tr['current_level'], 'remaining' => 0, 'paused' => (bool) $tr['clock_paused']];
+    if ($total === 0) return $base;
+
+    $li = fn($i) => ($i >= 1 && $i <= $total) ? $levels[$i - 1] : null;
+    $pack = function ($lv) {
+        if (!$lv) return null;
+        return ['sb' => (int) $lv['sb'], 'bb' => (int) $lv['bb'], 'ante' => (int) $lv['ante'],
+                'is_break' => (bool) $lv['is_break'], 'title' => $lv['title'], 'duration_min' => (int) $lv['duration_min']];
+    };
+
+    if ($tr['status'] !== 'running') {
+        $cur = max(1, min($total, (int) $tr['current_level'] ?: 1));
+        return array_merge($base, ['current' => $pack($li($cur)), 'next' => $pack($li($cur + 1)), 'level' => $cur]);
+    }
+
+    $cur = max(1, min($total, (int) $tr['current_level']));
+    if ($tr['clock_paused']) {
+        $remaining = (int) $tr['paused_left'];
+    } else {
+        $into = (int) $tr['elapsed'];
+        while ($cur < $total && $into >= ((int) $levels[$cur - 1]['duration_min']) * 60) {
+            $into -= ((int) $levels[$cur - 1]['duration_min']) * 60;
+            $cur++;
+        }
+        $dur = ((int) $levels[$cur - 1]['duration_min']) * 60;
+        $remaining = max(0, $dur - $into);
+        if ($cur !== (int) $tr['current_level']) {
+            $passed = (int) $tr['elapsed'] - $into;
+            $pdo->prepare("UPDATE tournaments SET current_level=?, level_started_at = level_started_at + INTERVAL ? SECOND WHERE id=?")
+                ->execute([$cur, $passed, $tid]);
+        }
+    }
+    return array_merge($base, ['level' => $cur, 'remaining' => $remaining, 'current' => $pack($li($cur)), 'next' => $pack($li($cur + 1))]);
+}
+
+/** Краткая сводка турнира для лайв-экрана. */
+function tournament_summary(PDO $pdo, int $tid): array
+{
+    $stack = (int) ($pdo->query("SELECT stack FROM tournaments WHERE id=$tid")->fetchColumn() ?: 0);
+    $entries = (int) $pdo->query("SELECT COUNT(*) FROM entries WHERE tournament_id=$tid")->fetchColumn();
+    $active  = (int) $pdo->query("SELECT COUNT(*) FROM tournament_players WHERE tournament_id=$tid AND status='active'")->fetchColumn();
+    $players = (int) $pdo->query("SELECT COUNT(*) FROM tournament_players WHERE tournament_id=$tid")->fetchColumn();
+    $chips = $entries * $stack;
+    return ['players' => $players, 'active' => $active, 'entries' => $entries,
+            'chips_in_play' => $chips, 'avg_stack' => $active > 0 ? (int) round($chips / $active) : 0];
+}
+
 /** Требовать права администратора. */
 function require_admin(): array
 {

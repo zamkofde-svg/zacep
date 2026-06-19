@@ -129,6 +129,7 @@ switch ($action) {
                 'table_size' => (int) $tour['table_size'], 'buyin' => (int) $tour['buyin'], 'stack' => (int) $tour['stack'],
             ],
             'players' => $players, 'pending' => $pending,
+            'clock' => tournament_clock($pdo, $tid),
             'summary' => [
                 'players' => $total, 'active' => $active, 'entries' => $entriesTotal,
                 'money' => $money, 'chips_in_play' => $chipsInPlay,
@@ -248,6 +249,98 @@ switch ($action) {
         $pdo->prepare("UPDATE tournament_players SET table_no=?, seat_no=? WHERE tournament_id=? AND user_id=?")
             ->execute([$table, $seat, $tid, $uid]);
         json_out(['ok' => true, 'table_no' => $table, 'seat_no' => $seat]);
+        break;
+    }
+
+    case 'levels_get': {
+        $rows = $pdo->query("SELECT idx,sb,bb,ante,duration_min,is_break,title FROM tournament_levels WHERE tournament_id=$tid ORDER BY idx")->fetchAll();
+        json_out(['levels' => $rows]);
+        break;
+    }
+
+    case 'levels_default': {
+        only_method('POST');
+        if (!$tid) json_out(['error' => 'no_tournament'], 400);
+        $pdo->query("DELETE FROM tournament_levels WHERE tournament_id=$tid");
+        $ins = $pdo->prepare("INSERT INTO tournament_levels (tournament_id,idx,sb,bb,ante,duration_min,is_break,title) VALUES (?,?,?,?,?,?,?,?)");
+        $i = 1;
+        foreach (default_levels() as [$sb, $bb, $ante, $min, $brk, $title]) {
+            $ins->execute([$tid, $i++, $sb, $bb, $ante, $min, $brk, $title]);
+        }
+        json_out(['ok' => true, 'count' => $i - 1]);
+        break;
+    }
+
+    case 'levels_set': {
+        only_method('POST');
+        if (!$tid) json_out(['error' => 'no_tournament'], 400);
+        $levels = $body['levels'] ?? [];
+        if (!is_array($levels) || !$levels) json_out(['error' => 'bad_input', 'message' => 'Нет уровней'], 422);
+        $pdo->query("DELETE FROM tournament_levels WHERE tournament_id=$tid");
+        $ins = $pdo->prepare("INSERT INTO tournament_levels (tournament_id,idx,sb,bb,ante,duration_min,is_break,title) VALUES (?,?,?,?,?,?,?,?)");
+        $i = 1;
+        foreach ($levels as $l) {
+            $brk = !empty($l['is_break']) ? 1 : 0;
+            $ins->execute([$tid, $i++, (int)($l['sb']??0), (int)($l['bb']??0), (int)($l['ante']??0),
+                max(1,(int)($l['duration_min']??20)), $brk, $l['title'] ?? null]);
+        }
+        json_out(['ok' => true, 'count' => $i - 1]);
+        break;
+    }
+
+    case 'start': {
+        only_method('POST');
+        $cnt = (int) $pdo->query("SELECT COUNT(*) FROM tournament_levels WHERE tournament_id=$tid")->fetchColumn();
+        if ($cnt === 0) json_out(['error' => 'no_levels', 'message' => 'Сначала задайте структуру блайндов'], 422);
+        $pdo->prepare("UPDATE tournaments SET status='running', current_level=1, level_started_at=NOW(), clock_paused=0, paused_left=NULL WHERE id=?")->execute([$tid]);
+        json_out(['ok' => true]);
+        break;
+    }
+
+    case 'pause': {
+        only_method('POST');
+        $c = tournament_clock($pdo, $tid);
+        if (($c['status'] ?? '') === 'running' && empty($c['paused'])) {
+            $pdo->prepare("UPDATE tournaments SET clock_paused=1, paused_left=? WHERE id=?")->execute([(int) $c['remaining'], $tid]);
+        }
+        json_out(['ok' => true]);
+        break;
+    }
+
+    case 'resume': {
+        only_method('POST');
+        $left = (int) ($pdo->query("SELECT paused_left FROM tournaments WHERE id=$tid")->fetchColumn() ?: 0);
+        $dur  = (int) ($pdo->query("SELECT l.duration_min FROM tournament_levels l JOIN tournaments t ON t.id=l.tournament_id AND t.current_level=l.idx WHERE t.id=$tid")->fetchColumn() ?: 20) * 60;
+        $back = max(0, $dur - $left);
+        $pdo->prepare("UPDATE tournaments SET clock_paused=0, paused_left=NULL, level_started_at = NOW() - INTERVAL ? SECOND WHERE id=?")->execute([$back, $tid]);
+        json_out(['ok' => true]);
+        break;
+    }
+
+    case 'next_level': case 'prev_level': {
+        only_method('POST');
+        $total = (int) $pdo->query("SELECT COUNT(*) FROM tournament_levels WHERE tournament_id=$tid")->fetchColumn();
+        $cur = (int) $pdo->query("SELECT current_level FROM tournaments WHERE id=$tid")->fetchColumn();
+        $cur += ($action === 'next_level') ? 1 : -1;
+        $cur = max(1, min($total ?: 1, $cur));
+        $pdo->prepare("UPDATE tournaments SET current_level=?, level_started_at=NOW(), clock_paused=0, paused_left=NULL WHERE id=?")->execute([$cur, $tid]);
+        json_out(['ok' => true, 'level' => $cur]);
+        break;
+    }
+
+    case 'finish': {
+        only_method('POST');
+        $pdo->prepare("UPDATE tournaments SET status='finished', clock_paused=1 WHERE id=?")->execute([$tid]);
+        json_out(['ok' => true]);
+        break;
+    }
+
+    case 'set_status': { // ручная смена статуса (scheduled/running/final/finished)
+        only_method('POST');
+        $st = in_array($body['status'] ?? '', ['scheduled','running','final','finished'], true) ? $body['status'] : null;
+        if (!$st) json_out(['error' => 'bad_status'], 422);
+        $pdo->prepare("UPDATE tournaments SET status=? WHERE id=?")->execute([$st, $tid]);
+        json_out(['ok' => true]);
         break;
     }
 

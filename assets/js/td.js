@@ -15,6 +15,34 @@ async function api(path, opts = {}) {
 }
 const td = (action, payload) => api('td.php', { method: 'POST', body: JSON.stringify({ action, tournament_id: TID, ...payload }) });
 
+const STATUS_RU = { scheduled: 'анонс', running: 'идёт', final: 'финалка', finished: 'завершён' };
+const statusRu = (s) => STATUS_RU[s] || s;
+function fmtClock(sec) { sec = Math.max(0, sec | 0); const m = Math.floor(sec / 60), s = sec % 60; return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`; }
+function blindsStr(lv) { if (!lv) return '—'; if (lv.is_break) return lv.title || 'Перерыв'; return `${fmt(lv.sb)} / ${fmt(lv.bb)}${lv.ante ? ' · анте ' + fmt(lv.ante) : ''}`; }
+
+function clockBoxHTML(c) {
+  if (!c || !c.has_levels) return '<p class="muted">Структура блайндов не задана.</p>';
+  const cur = c.current || {};
+  return `
+    <div style="font-family:var(--font-head);font-weight:700;font-size:3rem;color:var(--accent);line-height:1;" id="clkTime">${fmtClock(c.remaining)}</div>
+    <div class="muted" style="margin:6px 0 10px;">Уровень <b id="clkLevel">${c.level}</b> из ${c.total}${c.paused ? ' · ⏸ пауза' : ''}</div>
+    <div style="font-family:var(--font-head);font-weight:600;font-size:1.3rem;" id="clkBlinds">${blindsStr(cur)}</div>
+    <div class="muted" style="font-size:.85rem;margin-top:4px;" id="clkNext">Далее: ${blindsStr(c.next)}</div>`;
+}
+
+function clockControls(c, status) {
+  if (!c || !c.has_levels) return `<button class="btn btn-primary btn-sm" id="lvlDefault">Применить стандартную структуру (15 уровней)</button>`;
+  if (status === 'running' || status === 'final') {
+    return `
+      ${c.paused ? '<button class="btn btn-primary btn-sm" id="clkResume">▶ Продолжить</button>' : '<button class="btn btn-ghost btn-sm" id="clkPause">⏸ Пауза</button>'}
+      <button class="btn btn-ghost btn-sm" id="clkPrev">◀ уровень</button>
+      <button class="btn btn-ghost btn-sm" id="clkNextBtn">уровень ▶</button>
+      <button class="btn btn-sm btn-danger" id="clkFinish">🏁 Финиш</button>`;
+  }
+  return `<button class="btn btn-primary btn-sm" id="clkStart">▶ Старт турнира</button>
+          <button class="btn btn-ghost btn-sm" id="lvlDefault">Сбросить структуру (стандарт)</button>`;
+}
+
 (async function init() {
   if (!TID) { root.innerHTML = '<p class="muted" style="padding-top:40px;">Не указан турнир. Откройте из админки.</p>'; return; }
   let me;
@@ -44,6 +72,13 @@ function render(d) {
       <div class="dstat"><div class="ic">🔁</div><div class="n">${s.entries}</div><div class="l">закупов всего</div></div>
       <div class="dstat"><div class="ic">💰</div><div class="n">${fmt(s.money)} ₽</div><div class="l">касса вечера</div></div>
       <div class="dstat"><div class="ic">🃏</div><div class="n">${fmt(s.avg_stack)}</div><div class="l">средний стек</div><div class="delta">${fmt(s.chips_in_play)} фишек в игре</div></div>
+    </div>
+
+    <div class="panel" style="margin-bottom:22px;">
+      <div class="panel-head"><h3>⏱ Часы турнира · <span id="clkStatus">${statusRu(T.status)}</span></h3>
+        <a class="btn btn-ghost btn-sm" href="live.html?t=${TID}" target="_blank">📺 Табло</a></div>
+      <div id="clockBox" style="text-align:center;padding:6px 0 18px;">${clockBoxHTML(d.clock)}</div>
+      <div class="mini-form" style="justify-content:center;">${clockControls(d.clock, T.status)}</div>
     </div>
 
     <div class="panel" style="margin-bottom:22px;">
@@ -128,6 +163,16 @@ function render(d) {
     act(() => td('move', { number: n, table_no: 0 }));
   });
 
+  // часы
+  document.getElementById('clkStart')?.addEventListener('click', () => act(() => td('start', {})));
+  document.getElementById('clkPause')?.addEventListener('click', () => act(() => td('pause', {})));
+  document.getElementById('clkResume')?.addEventListener('click', () => act(() => td('resume', {})));
+  document.getElementById('clkPrev')?.addEventListener('click', () => act(() => td('prev_level', {})));
+  document.getElementById('clkNextBtn')?.addEventListener('click', () => act(() => td('next_level', {})));
+  document.getElementById('clkFinish')?.addEventListener('click', () => { if (confirm('Завершить турнир? Часы остановятся.')) act(() => td('finish', {})); });
+  document.getElementById('lvlDefault')?.addEventListener('click', () => { if (confirm('Применить стандартную структуру блайндов? Текущая будет заменена.')) act(() => td('levels_default', {})); });
+  startClockPoll();
+
   document.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {
     const uid = Number(b.dataset.uid), a = b.dataset.act;
     if (a === 'bust') { if (!confirm('Отметить вылет игрока?')) return; act(() => td('bust', { user_id: uid })); }
@@ -180,4 +225,17 @@ function rowHTML(p) {
 async function act(fn) {
   try { await fn(); await load(); }
   catch (e) { alert(e.data?.message || 'Ошибка операции'); }
+}
+
+function startClockPoll() {
+  if (window.__clk) clearInterval(window.__clk);
+  const tick = async () => {
+    if (!document.getElementById('clockBox')) { clearInterval(window.__clk); return; }
+    let c; try { c = (await api('clock.php?t=' + TID)).clock; } catch { return; }
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    set('clkTime', fmtClock(c.remaining)); set('clkLevel', c.level);
+    set('clkBlinds', blindsStr(c.current)); set('clkNext', 'Далее: ' + blindsStr(c.next));
+  };
+  tick();
+  window.__clk = setInterval(tick, 1000);
 }
