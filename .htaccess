@@ -4,6 +4,13 @@ RewriteCond %{HTTPS} !=on
 RewriteCond %{HTTP:X-Forwarded-Proto} !=https
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+# HTML/CSS/JS — всегда перепроверять у сервера (чтобы не висел старый кэш)
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|js|css)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
 # Не отдавать наружу конфиги/служебное
 <FilesMatch "^(\.gitignore|README\.md|\.nojekyll)$">
   Require all denied
