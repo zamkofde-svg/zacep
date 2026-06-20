@@ -89,7 +89,7 @@ function openForm(t = null) {
       <div><label class="lbl">Дата и время</label><input type="datetime-local" name="starts_at" value="${dtLocalValue(t?.starts_at)}" required></div>
       <div><label class="lbl">Мест</label><input type="number" name="seats" value="${t?.seats ?? 36}" min="1"></div>
       <div><label class="lbl">Взнос, ₽</label><input type="number" name="buyin" value="${t?.buyin ?? 1500}" min="0"></div>
-      <div><label class="lbl">Стартовый стек</label><input type="number" name="stack" value="${t?.stack ?? 20000}" min="0"></div>
+      <div><label class="lbl">Стартовый стек</label><input type="number" name="stack" value="${t?.stack ?? 3000}" min="0"></div>
       <div><label class="lbl">Площадка</label><input name="venue" value="${esc(t?.venue || 'ТРЦ «Грин Хаус», Тюмень')}"></div>
       <div class="full"><label class="lbl">Описание</label><textarea name="description">${esc(t?.description || '')}</textarea></div>
       <label class="check full"><input type="checkbox" name="is_published" ${(!t || t.is_published==1)?'checked':''}> Опубликован (виден на сайте)</label>

@@ -31,7 +31,7 @@ function clockBoxHTML(c) {
 }
 
 function clockControls(c, status) {
-  if (!c || !c.has_levels) return `<button class="btn btn-primary btn-sm" id="lvlDefault">Применить стандартную структуру (15 уровней)</button>`;
+  if (!c || !c.has_levels) return `<button class="btn btn-primary btn-sm" id="lvlDefault">Загрузить структуру «Классика» (10/20, аддон через 3ч)</button>`;
   if (status === 'running' || status === 'final') {
     return `
       ${c.paused ? '<button class="btn btn-primary btn-sm" id="clkResume">▶ Продолжить</button>' : '<button class="btn btn-ghost btn-sm" id="clkPause">⏸ Пауза</button>'}
@@ -40,7 +40,7 @@ function clockControls(c, status) {
       <button class="btn btn-sm btn-danger" id="clkFinish">🏁 Финиш</button>`;
   }
   return `<button class="btn btn-primary btn-sm" id="clkStart">▶ Старт турнира</button>
-          <button class="btn btn-ghost btn-sm" id="lvlDefault">Сбросить структуру (стандарт)</button>`;
+          <button class="btn btn-ghost btn-sm" id="lvlDefault">Сбросить структуру (Классика 10/20)</button>`;
 }
 
 (async function init() {
