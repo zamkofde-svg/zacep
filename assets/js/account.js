@@ -42,10 +42,6 @@ async function api(path, opts = {}) {
 /* ---------------- Telegram Login Widget ---------------- */
 async function mountTelegramWidget() {
   const box = el('tg-widget');
-  if (window.__tgDiag) {
-    box.innerHTML = `<p class="legal" style="color:var(--danger);font-size:.8rem;">⚠ ${esc(window.__tgDiag)}</p>`;
-    return;
-  }
   try {
     const { tg_bot_username } = await api('config_public.php');
     if (!tg_bot_username) throw new Error('no-bot');
@@ -61,6 +57,14 @@ async function mountTelegramWidget() {
     box.appendChild(s);
   } catch {
     box.innerHTML = '<p class="legal">Кнопка входа Telegram появится после настройки бота на боевом домене.</p>';
+  }
+  // диагностика мини-аппа — ПОД кнопкой, не вместо неё
+  if (window.__tgDiag) {
+    const d = document.createElement('p');
+    d.className = 'legal';
+    d.style.cssText = 'color:var(--danger);font-size:.75rem;margin-top:8px;';
+    d.textContent = '⚠ ' + window.__tgDiag;
+    box.appendChild(d);
   }
 }
 
