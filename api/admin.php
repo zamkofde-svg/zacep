@@ -141,6 +141,33 @@ switch ($action) {
         json_out(['ok' => true, 'new_achievements' => $new]);
         break;
 
+    case 'duplicates': { // аккаунты с одинаковым телефоном
+        $rows = $pdo->query("
+            SELECT phone, COUNT(*) c FROM users
+            WHERE phone IS NOT NULL AND phone<>'' GROUP BY phone HAVING c>1
+        ")->fetchAll();
+        $groups = [];
+        foreach ($rows as $r) {
+            $us = $pdo->prepare("SELECT id, tg_id, username, nick, real_name, phone, is_admin,
+                (SELECT COUNT(*) FROM results res WHERE res.user_id=u.id) AS results
+                FROM users u WHERE phone=? ORDER BY (tg_id IS NOT NULL) DESC, id ASC");
+            $us->execute([$r['phone']]);
+            $groups[] = ['phone' => $r['phone'], 'users' => $us->fetchAll()];
+        }
+        json_out(['groups' => $groups]);
+        break;
+    }
+
+    case 'merge': {
+        only_method('POST');
+        $keep = (int) ($body['keep_id'] ?? 0);
+        $drop = (int) ($body['drop_id'] ?? 0);
+        if (!$keep || !$drop || $keep === $drop) json_out(['error' => 'bad_input'], 422);
+        merge_users($pdo, $keep, $drop);
+        json_out(['ok' => true]);
+        break;
+    }
+
     default:
         json_out(['error' => 'unknown_action'], 400);
 }

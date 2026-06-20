@@ -212,6 +212,40 @@ function tournament_summary(PDO $pdo, int $tid): array
             'chips_in_play' => $chips, 'avg_stack' => $active > 0 ? (int) round($chips / $active) : 0];
 }
 
+/**
+ * Слить аккаунт $loser в $survivor: перенести все данные, заполнить пустые поля,
+ * удалить loser. Конфликтные по UNIQUE строки остаются у loser и удаляются каскадом.
+ */
+function merge_users(PDO $pdo, int $survivor, int $loser): bool
+{
+    if ($survivor === $loser || $survivor <= 0 || $loser <= 0) return false;
+    $l = $pdo->prepare('SELECT * FROM users WHERE id=?');
+    $l->execute([$loser]);
+    $lr = $l->fetch();
+    if (!$lr) return false;
+
+    foreach (['registrations', 'results', 'tournament_players', 'user_achievements', 'entries'] as $tbl) {
+        $pdo->prepare("UPDATE IGNORE $tbl SET user_id=? WHERE user_id=?")->execute([$survivor, $loser]);
+    }
+    // удаляем loser (каскад добьёт неперенесённые конфликтные строки), освобождая UNIQUE tg_id
+    $pdo->prepare('DELETE FROM users WHERE id=?')->execute([$loser]);
+
+    // дополняем пустые поля survivor данными из loser
+    $pdo->prepare('UPDATE users SET
+        tg_id=COALESCE(tg_id,?), username=COALESCE(username,?),
+        first_name=COALESCE(first_name,?), last_name=COALESCE(last_name,?),
+        real_name=COALESCE(real_name,?), nick=COALESCE(nick,?),
+        phone=COALESCE(phone,?), password_hash=COALESCE(password_hash,?),
+        photo_url=COALESCE(photo_url,?), is_admin=GREATEST(is_admin,?), onboarded=GREATEST(onboarded,?)
+        WHERE id=?')
+        ->execute([
+            $lr['tg_id'], $lr['username'], $lr['first_name'], $lr['last_name'],
+            $lr['real_name'], $lr['nick'], $lr['phone'], $lr['password_hash'],
+            $lr['photo_url'], (int) $lr['is_admin'], (int) $lr['onboarded'], $survivor,
+        ]);
+    return true;
+}
+
 /** Требовать права администратора. */
 function require_admin(): array
 {

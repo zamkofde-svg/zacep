@@ -37,11 +37,13 @@ if (!empty($data['initData'])) {
 if (!$tgId) json_out(['error' => 'no_tg_id'], 400);
 
 $pdo = db();
-// этот Telegram уже привязан к другому аккаунту?
+// этот Telegram уже есть отдельным аккаунтом? — сливаем его в текущий
+// (оба владения подтверждены: текущий — по сессии, Telegram — по подписи)
 $other = $pdo->prepare('SELECT id FROM users WHERE tg_id = ? AND id <> ?');
 $other->execute([$tgId, $u['id']]);
-if ($other->fetch()) {
-    json_out(['error' => 'tg_taken', 'message' => 'Этот Telegram уже привязан к другому аккаунту'], 409);
+$o = $other->fetch();
+if ($o) {
+    merge_users($pdo, (int) $u['id'], (int) $o['id']);
 }
 
 $isAdmin = in_array($tgId, array_map('intval', $c['admins'] ?? []), true) ? 1 : (int) $u['is_admin'];

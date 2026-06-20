@@ -48,8 +48,33 @@ function renderShell(user) {
       <button class="btn btn-primary btn-sm" id="newBtn">+ Новый турнир</button>
     </div>
     <div class="panel" id="formPanel" hidden></div>
-    <div class="panel"><div class="panel-head"><h3>Турниры</h3></div><div id="tlist"><p class="muted">Загрузка…</p></div></div>`;
+    <div class="panel"><div class="panel-head"><h3>Турниры</h3></div><div id="tlist"><p class="muted">Загрузка…</p></div></div>
+    <div class="panel" style="margin-top:22px;"><div class="panel-head"><h3>Дубли по телефону</h3><button class="btn btn-ghost btn-sm" id="dupBtn">Проверить</button></div><div id="dupList"><p class="muted">Нажми «Проверить», чтобы найти аккаунты с одинаковым номером.</p></div></div>`;
   document.getElementById('newBtn').addEventListener('click', () => openForm());
+  document.getElementById('dupBtn').addEventListener('click', loadDuplicates);
+}
+
+async function loadDuplicates() {
+  const box = document.getElementById('dupList');
+  box.innerHTML = '<p class="muted">Загрузка…</p>';
+  const { groups } = await adminApi('duplicates');
+  if (!groups.length) { box.innerHTML = '<p class="muted">Дублей по телефону нет 👍</p>'; return; }
+  box.innerHTML = groups.map(g => {
+    const keep = g.users.find(u => u.tg_id) || g.users[0];
+    const rows = g.users.map(u => `<div class="history-item"><span>#${u.id} <b>${esc(u.nick || u.real_name || '—')}</b>${u.tg_id ? ' · ТГ ' + (u.username ? '@' + esc(u.username) : '✓') : ''}${u.is_admin == 1 ? ' · админ' : ''} · результатов: ${u.results}</span>${u.id === keep.id ? '<span class="hi-place">оставить</span>' : '<span class="muted">удалить</span>'}</div>`).join('');
+    return `<div class="trow" style="flex-direction:column;align-items:stretch;" data-keep="${keep.id}" data-ids="${g.users.map(u => u.id).join(',')}">
+      <div class="t-main"><h4>${esc(g.phone)}</h4>${rows}</div>
+      <div style="margin-top:10px;"><button class="btn btn-primary btn-sm dup-merge">Объединить в #${keep.id}</button></div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.dup-merge').forEach(b => b.addEventListener('click', async () => {
+    const row = b.closest('[data-keep]');
+    const keep = Number(row.dataset.keep);
+    const drops = row.dataset.ids.split(',').map(Number).filter(x => x !== keep);
+    if (!confirm(`Объединить аккаунты в #${keep}? Данные перенесутся, лишние удалятся.`)) return;
+    try { for (const d of drops) await adminApi('merge', { keep_id: keep, drop_id: d }); await loadDuplicates(); alert('Объединено ✅'); }
+    catch (e) { alert(e.data?.message || 'Ошибка'); }
+  }));
 }
 
 /* ---------- форма турнира ---------- */
