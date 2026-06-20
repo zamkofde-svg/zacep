@@ -219,7 +219,11 @@ function renderDashboard(me, tournaments) {
             <div class="history-item"><span>Фамилия и имя</span><span>${esc(u.real_name || '—')}</span></div>
             <div class="history-item"><span>Покерный ник</span><span class="hi-place">${esc(u.nick || '—')}</span></div>
             <div class="history-item"><span>Телефон</span><span>${esc(u.phone || '—')}</span></div>
-            <div class="history-item"><span>Telegram</span><span>${u.username ? '@' + esc(u.username) : '—'}</span></div>
+            <div class="history-item"><span>Telegram</span><span>${u.tg_id ? (u.username ? '@' + esc(u.username) : 'привязан ✓') : '<span class="muted">не привязан</span>'}</span></div>
+            ${!u.tg_id ? `<div style="padding-top:14px;">
+              <p class="muted" style="font-size:.85rem;margin-bottom:10px;">Привяжи Telegram, чтобы получать уведомления о записи, результатах и ачивках:</p>
+              <div id="linkTgBox" style="display:flex;justify-content:flex-start;min-height:40px;"></div>
+            </div>` : ''}
           </div>
         </div>
       </div>
@@ -229,8 +233,48 @@ function renderDashboard(me, tournaments) {
 
   el('logout').addEventListener('click', doLogout);
   document.querySelectorAll('.reg-btn').forEach(b => b.addEventListener('click', () => doRegister(b.dataset.tid, b.dataset.title)));
+  if (!u.tg_id) mountLinkWidget('linkTgBox');
   window.scrollTo(0, 0);
 }
+
+/* ---------- Привязка Telegram к текущему аккаунту ---------- */
+async function mountLinkWidget(id) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  const tg = window.Telegram?.WebApp;
+  if (tg && tg.initData) { // внутри мини-аппа
+    box.innerHTML = '<button class="btn btn-primary btn-sm" id="linkTgMini">✈ Привязать этот Telegram</button>';
+    document.getElementById('linkTgMini').addEventListener('click', async () => {
+      try { await api('link_telegram.php', { method: 'POST', body: JSON.stringify({ initData: tg.initData }) }); alert('Telegram привязан ✅'); await loadDashboard(); }
+      catch (e) { alert(e.data?.message || 'Не удалось привязать'); }
+    });
+    return;
+  }
+  try {
+    const { tg_bot_username } = await api('config_public.php');
+    if (!tg_bot_username) throw new Error('no-bot');
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://telegram.org/js/telegram-widget.js?22';
+    s.setAttribute('data-telegram-login', tg_bot_username);
+    s.setAttribute('data-size', 'medium');
+    s.setAttribute('data-radius', '12');
+    s.setAttribute('data-onauth', 'onTelegramLink(user)');
+    s.setAttribute('data-request-access', 'write');
+    box.innerHTML = '';
+    box.appendChild(s);
+  } catch { box.innerHTML = '<p class="legal">Привязка появится после настройки бота.</p>'; }
+}
+
+window.onTelegramLink = async (user) => {
+  try {
+    await api('link_telegram.php', { method: 'POST', body: JSON.stringify(user) });
+    alert('Telegram привязан ✅ Нажми Start у @zacepfun_bot, чтобы получать уведомления.');
+    await loadDashboard();
+  } catch (e) {
+    alert(e.data?.message || 'Не удалось привязать Telegram');
+  }
+};
 
 async function doRegister(tid, title) {
   if (!BACKEND) { alert('Демо-режим: на боевом сайте здесь произойдёт запись на турнир.'); return; }
