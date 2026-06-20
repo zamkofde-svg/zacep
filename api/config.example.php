@@ -26,6 +26,10 @@ return [
     // ---- Сессии ----
     'session_name' => 'zacep_sid',
 
+    // Секрет для cron-напоминаний (любая случайная строка). Запуск:
+    // php api/cron_reminders.php  ИЛИ  /api/cron_reminders.php?key=<этот ключ>
+    'cron_key' => 'ВСТАВЬ_СЛУЧАЙНУЮ_СТРОКУ',
+
     // Telegram ID администраторов (через запятую), которым доступна выдача результатов.
     // Узнать свой ID можно у @userinfobot
     'admins' => [],

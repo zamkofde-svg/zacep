@@ -102,6 +102,17 @@ CREATE TABLE IF NOT EXISTS results (
   CONSTRAINT fk_res_tour FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS reminder_log (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  tournament_id INT NOT NULL,
+  user_id INT NOT NULL,
+  kind VARCHAR(16) NOT NULL,
+  sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_rem (tournament_id, user_id, kind),
+  CONSTRAINT fk_rem_tour FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE,
+  CONSTRAINT fk_rem_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS user_achievements (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   user_id    INT NOT NULL,
