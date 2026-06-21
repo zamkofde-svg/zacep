@@ -180,9 +180,6 @@ function renderRegs(regs, tid) {
         <p>${esc([r.nick && r.nick!==r.real_name ? '«'+r.nick+'»' : '', r.phone, r.username?'@'+r.username:''].filter(Boolean).join(' · ') || '—')}</p>
       </div>
       <div class="mini-form">
-        <input class="res-place" type="number" placeholder="место" min="1">
-        <input class="res-points" type="number" placeholder="очки" min="0">
-        <button class="btn btn-primary btn-sm res-add">Результат</button>
         <button class="btn btn-sm btn-danger reg-cancel">Снять</button>
       </div>
     </div>`).join('');
@@ -191,15 +188,6 @@ function renderRegs(regs, tid) {
 function bindRegActions(box, tid) {
   box.querySelectorAll('.reg-item').forEach(item => {
     const uid = Number(item.dataset.uid);
-    item.querySelector('.res-add').addEventListener('click', async () => {
-      const place = item.querySelector('.res-place').value;
-      const points = item.querySelector('.res-points').value;
-      try {
-        const r = await adminApi('result_add', { tournament_id: tid, user_id: uid, place, points });
-        const ach = (r.new_achievements || []).map(a => a.emoji + ' ' + a.title).join(', ');
-        alert('Результат внесён.' + (ach ? '\nНовые ачивки: ' + ach : ''));
-      } catch (e) { alert(e.data?.message || 'Ошибка'); }
-    });
     item.querySelector('.reg-cancel').addEventListener('click', async () => {
       if (!confirm('Снять игрока с турнира?')) return;
       await adminApi('reg_cancel', { tournament_id: tid, user_id: uid });
