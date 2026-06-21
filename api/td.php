@@ -354,7 +354,7 @@ switch ($action) {
 
         $entries = (int) $pdo->query("SELECT COUNT(*) FROM entries WHERE tournament_id=$tid")->fetchColumn();
         $stack   = (int) $tour['stack'];
-        $pool    = (int) round($entries * $stack / 1000); // банк очков = фишки в игре ÷ 1000
+        $pool    = (int) round($entries * $stack / 100); // банк очков = фишки в игре ÷ 100
         $totalPlayers = (int) $pdo->query("SELECT COUNT(*) FROM tournament_players WHERE tournament_id=$tid")->fetchColumn();
 
         $curve = [30, 20, 14, 11, 8, 6, 5, 4, 2]; // доли мест 1..9, %
