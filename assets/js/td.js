@@ -31,7 +31,7 @@ function clockBoxHTML(c) {
 }
 
 function clockControls(c, status) {
-  if (!c || !c.has_levels) return `<button class="btn btn-primary btn-sm" id="lvlDefault">Загрузить структуру «Классика» (10/20, аддон через 3ч)</button>`;
+  if (!c || !c.has_levels) return `<button class="btn btn-primary btn-sm" id="lvlDefault">Загрузить структуру «Классика» (10/20, уровни 15 мин, аддон после 75/150)</button>`;
   if (status === 'running' || status === 'final') {
     return `
       ${c.paused ? '<button class="btn btn-primary btn-sm" id="clkResume">▶ Продолжить</button>' : '<button class="btn btn-ghost btn-sm" id="clkPause">⏸ Пауза</button>'}
