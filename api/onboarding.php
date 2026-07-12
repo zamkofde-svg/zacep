@@ -25,8 +25,16 @@ if ($phoneNorm !== '' && strlen(preg_replace('/\D/', '', $phoneNorm)) < 11) {
 $stmt = db()->prepare('UPDATE users SET nick=?, phone=?, real_name=?, onboarded=1 WHERE id=?');
 $stmt->execute([$nick, $phoneNorm, $realName, $u['id']]);
 
-$u['nick'] = $nick;
-$u['phone'] = $phoneNorm;
-$u['real_name'] = $realName;
-$u['onboarded'] = 1;
-json_out(['ok' => true, 'user' => public_user($u)]);
+// авто-слияние: если этот телефон уже есть на «оффлайн»-карточке (без Telegram
+// и без пароля — заведена на входе/в консоли), сливаем её в текущий аккаунт
+if ($phoneNorm !== '') {
+    $dup = db()->prepare('SELECT id FROM users WHERE phone=? AND id<>? AND tg_id IS NULL AND password_hash IS NULL LIMIT 1');
+    $dup->execute([$phoneNorm, $u['id']]);
+    if ($d = $dup->fetch()) {
+        merge_users(db(), (int) $u['id'], (int) $d['id']);
+    }
+}
+
+$fresh = db()->prepare('SELECT * FROM users WHERE id=?');
+$fresh->execute([$u['id']]);
+json_out(['ok' => true, 'user' => public_user($fresh->fetch())]);
