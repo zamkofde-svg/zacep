@@ -84,7 +84,7 @@ function bindOnboarding() {
     const real_name = el('onbName').value.trim();
     const nick = el('onbNick').value.trim();
     const phone = el('onbPhone').value.trim();
-    if (!el('onbConsent').checked) { alert('Подтвердите согласие, чтобы продолжить'); return; }
+    if (!el('onbConsent').checked) { alert('Подтвердите, что вам исполнилось 18 лет'); return; }
     try {
       await api('onboarding.php', { method: 'POST', body: JSON.stringify({ real_name, nick, phone }) });
       await route();

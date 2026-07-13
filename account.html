@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Unbounded:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/css/style.css?v=630" />
+  <link rel="stylesheet" href="assets/css/style.css?v=631" />
 </head>
 <body>
 
@@ -63,12 +63,14 @@
           <label for="onbPhone">Телефон</label>
           <input type="tel" id="onbPhone" placeholder="+7 900 000-00-00" autocomplete="tel" />
         </div>
-        <label class="legal" style="display:flex;gap:10px;align-items:flex-start;text-align:left;cursor:pointer;margin:8px 0 18px;">
+        <label class="legal" style="display:flex;gap:10px;align-items:flex-start;text-align:left;cursor:pointer;margin:8px 0 12px;">
           <input type="checkbox" id="onbConsent" style="margin-top:3px;flex:0 0 auto;" />
-          <span>Согласен на обработку персональных данных в соответствии с
-            <a href="consent.html" style="color:var(--accent);">согласием</a> и
-            <a href="privacy.html" style="color:var(--accent);">политикой конфиденциальности</a> (152-ФЗ).</span>
+          <span>Подтверждаю, что мне исполнилось <b>18 лет</b>.</span>
         </label>
+        <p class="legal" style="text-align:left;margin:0 0 16px;">Продолжая регистрацию, вы соглашаетесь с
+          <a href="rules.html" style="color:var(--accent);">правилами клуба</a>,
+          <a href="consent.html" style="color:var(--accent);">согласием участника</a> и
+          <a href="privacy.html" style="color:var(--accent);">политикой конфиденциальности</a>.</p>
         <button type="submit" class="btn btn-primary btn-block">Продолжить</button>
       </form>
     </div>
@@ -77,8 +79,8 @@
   <!-- ===== Дашборд (заполняется из account.js) ===== -->
   <main class="dash active" id="view-dash" hidden></main>
 
-  <script src="assets/js/mask.js?v=630"></script>
+  <script src="assets/js/mask.js?v=631"></script>
 
-  <script src="assets/js/account.js?v=630"></script>
+  <script src="assets/js/account.js?v=631"></script>
 </body>
 </html>
