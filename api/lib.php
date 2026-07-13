@@ -5,6 +5,9 @@
 
 declare(strict_types=1);
 
+// Тюмень — UTC+5 (Asia/Yekaterinburg). Всё время системы в этом поясе.
+date_default_timezone_set('Asia/Yekaterinburg');
+
 function cfg(): array
 {
     static $config = null;
@@ -30,6 +33,7 @@ function db(): PDO
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
             ]);
+            $pdo->exec("SET time_zone = '+05:00'"); // тюменское время для NOW()/TIMESTAMP
         } catch (PDOException $e) {
             json_out(['error' => 'db_connect_failed'], 500);
         }
