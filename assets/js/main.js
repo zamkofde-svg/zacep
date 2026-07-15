@@ -25,52 +25,48 @@ document.querySelectorAll('.reveal').forEach((el, i) => {
   io.observe(el);
 });
 
-// ====== Leaderboard data + tabs ======
-const RATING = {
-  month: [
-    { name: 'Слава Полный дом',      t: 12, itm: 8, pts: 2480 },
-    { name: 'Нина Вильямс',          t: 14, itm: 7, pts: 2310 },
-    { name: 'Леха Скин',             t: 11, itm: 7, pts: 2145 },
-    { name: 'Егор большой трактор',  t: 10, itm: 6, pts: 1980 },
-    { name: 'Данич Качок',           t: 13, itm: 5, pts: 1870 },
-    { name: 'Вова Легенда',          t:  9, itm: 5, pts: 1640 },
-    { name: 'Данич Букетный',        t:  8, itm: 4, pts: 1510 },
-  ],
-  season: [
-    { name: 'Слава Полный дом',      t: 68, itm: 41, pts: 14820 },
-    { name: 'Нина Вильямс',          t: 61, itm: 39, pts: 14310 },
-    { name: 'Данич Качок',           t: 59, itm: 34, pts: 12640 },
-    { name: 'Леха Скин',             t: 54, itm: 33, pts: 12145 },
-    { name: 'Егор большой трактор',  t: 63, itm: 30, pts: 11870 },
-    { name: 'Вова Легенда',          t: 48, itm: 26, pts: 10210 },
-    { name: 'Данич Букетный',        t: 51, itm: 25, pts:  9640 },
-  ],
-  alltime: [
-    { name: 'Слава Полный дом',      t: 412, itm: 256, pts: 98420 },
-    { name: 'Данич Качок',           t: 388, itm: 231, pts: 91640 },
-    { name: 'Нина Вильямс',          t: 351, itm: 219, pts: 88310 },
-    { name: 'Вова Легенда',          t: 401, itm: 198, pts: 81870 },
-    { name: 'Леха Скин',             t: 322, itm: 191, pts: 78145 },
-    { name: 'Егор большой трактор',  t: 298, itm: 166, pts: 70210 },
-    { name: 'Данич Букетный',        t: 287, itm: 142, pts: 60995 },
-  ],
-};
-
+// ====== Leaderboard (реальные данные из api/rating.php) + tabs ======
 const lbBody = document.getElementById('lbBody');
 const fmt = n => n.toLocaleString('ru-RU');
 const medals = ['<span class="medal g">1</span>', '<span class="medal s">2</span>', '<span class="medal b">3</span>'];
 
-function renderLB(tab) {
+const PERIOD_MAP = { month: 'month', season: 'season', alltime: 'all' };
+const ratingCache = {};
+async function renderLB(tab) {
   if (!lbBody) return;
-  lbBody.innerHTML = RATING[tab].map((p, i) => `
+  let list = ratingCache[tab];
+  if (!list) {
+    try {
+      const r = await fetch('api/rating.php?period=' + (PERIOD_MAP[tab] || 'month'), { credentials: 'same-origin' });
+      list = (await r.json()).rating || [];
+      ratingCache[tab] = list;
+    } catch { list = []; }
+  }
+  if (!list.length) {
+    lbBody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:26px;color:var(--muted)">Рейтинг появится после первых турниров.</td></tr>';
+    return;
+  }
+  lbBody.innerHTML = list.map((p, i) => `
     <tr>
       <td class="rank">${i < 3 ? medals[i] : i + 1}</td>
-      <td>${p.name}</td>
-      <td class="num">${p.t}</td>
+      <td>${String(p.name || '').replace(/[<>]/g, '')}</td>
+      <td class="num">${p.tournaments}</td>
       <td class="num">${p.itm}</td>
-      <td class="pts">${fmt(p.pts)}</td>
+      <td class="pts">${fmt(p.points)}</td>
     </tr>`).join('');
 }
+
+// Hero-карточка «Рейтинг месяца» — реальный топ-5
+async function loadHeroRating() {
+  const box = document.getElementById('heroLb');
+  if (!box) return;
+  let list = [];
+  try { list = (await fetch('api/rating.php?period=month', { credentials: 'same-origin' }).then(r => r.json())).rating || []; } catch {}
+  if (!list.length) { box.innerHTML = '<p class="muted" style="padding:8px 0;font-size:.9rem;">Рейтинг обновится после первых турниров.</p>'; return; }
+  box.innerHTML = list.slice(0, 5).map((p, i) => `
+    <div class="lb-row${i === 0 ? ' top' : ''}"><span class="lb-rank">${i + 1}</span><span class="lb-name">${String(p.name || '').replace(/[<>]/g, '')}</span><span class="lb-pts">${fmt(p.points)}</span></div>`).join('');
+}
+loadHeroRating();
 
 // ====== Динамические карточки турниров (с фолбэком на демо) ======
 const WD = ['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
