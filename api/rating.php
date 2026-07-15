@@ -1,14 +1,17 @@
 <?php
-/** Рейтинг игроков. ?period=month|season|all (season = текущий год). */
+/** Рейтинг игроков. ?period=month|season|all. */
 declare(strict_types=1);
 require __DIR__ . '/lib.php';
+
+// Начало текущего сезона. Пока — с первого турнира клуба. Поменять при старте нового сезона.
+const SEASON_START = '2026-06-21';
 
 $period = $_GET['period'] ?? 'month';
 $where = '';
 if ($period === 'month') {
     $where = 'WHERE YEAR(res.created_at)=YEAR(CURDATE()) AND MONTH(res.created_at)=MONTH(CURDATE())';
 } elseif ($period === 'season') {
-    $where = 'WHERE YEAR(res.created_at)=YEAR(CURDATE())';
+    $where = "WHERE res.created_at >= '" . SEASON_START . " 00:00:00'";
 }
 
 $sql = "
