@@ -61,16 +61,35 @@ function json_in(): array
 function start_session(): void
 {
     $c = cfg();
+    $life = 60 * 24 * 3600; // 60 дней
     if (session_status() === PHP_SESSION_NONE) {
+        // отдельный каталог сессий вне webroot, чтобы GC соседних сайтов не удалял наши
+        $sp = dirname(__DIR__, 3) . '/php_sessions';
+        if (is_dir($sp) || @mkdir($sp, 0700, true)) {
+            @ini_set('session.save_path', $sp);
+        }
+        @ini_set('session.gc_maxlifetime', (string) $life);
+        @ini_set('session.cookie_lifetime', (string) $life);
+        $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
         session_name($c['session_name']);
         session_set_cookie_params([
-            'lifetime' => 0,
+            'lifetime' => $life,
             'path'     => '/',
             'httponly' => true,
             'samesite' => 'Lax',
-            'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+            'secure'   => $secure,
         ]);
         session_start();
+        // скользящее продление: обновляем куку при каждом заходе
+        if (!empty($_SESSION['uid'])) {
+            setcookie($c['session_name'], session_id(), [
+                'expires'  => time() + $life,
+                'path'     => '/',
+                'httponly' => true,
+                'samesite' => 'Lax',
+                'secure'   => $secure,
+            ]);
+        }
     }
 }
 
