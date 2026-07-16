@@ -39,6 +39,7 @@ const FORMATS = { classic: 'Классика', bounty: 'Баунти', guest: '�
   }
   renderShell(me.user);
   loadTournaments();
+  loadUsers();
 })();
 
 function renderShell(user) {
@@ -49,9 +50,89 @@ function renderShell(user) {
     </div>
     <div class="panel" id="formPanel" hidden></div>
     <div class="panel"><div class="panel-head"><h3>Турниры</h3></div><div id="tlist"><p class="muted">Загрузка…</p></div></div>
+    <div class="panel" style="margin-top:22px;">
+      <div class="panel-head" style="flex-wrap:wrap;gap:10px;">
+        <h3>Игроки · CRM</h3>
+        <input id="uSearch" placeholder="Поиск: имя, ник, телефон…" style="flex:1;min-width:180px;max-width:320px;padding:8px 12px;border-radius:10px;border:1px solid var(--line,#333);background:transparent;color:inherit;">
+      </div>
+      <div id="uStats" class="muted" style="margin-bottom:12px;"></div>
+      <div id="uList"><p class="muted">Загрузка…</p></div>
+    </div>
     <div class="panel" style="margin-top:22px;"><div class="panel-head"><h3>Дубли по телефону</h3><button class="btn btn-ghost btn-sm" id="dupBtn">Проверить</button></div><div id="dupList"><p class="muted">Нажми «Проверить», чтобы найти аккаунты с одинаковым номером.</p></div></div>`;
   document.getElementById('newBtn').addEventListener('click', () => openForm());
   document.getElementById('dupBtn').addEventListener('click', loadDuplicates);
+  document.getElementById('uSearch').addEventListener('input', (e) => renderUsers(e.target.value));
+}
+
+/* ---------- Игроки · CRM ---------- */
+let USERS = [];
+async function loadUsers() {
+  const { users } = await adminApi('users');
+  USERS = users;
+  renderUsers(document.getElementById('uSearch')?.value || '');
+}
+
+function uName(u) { return u.real_name || u.nick || u.first_name || (u.username ? '@' + u.username : ('Игрок #' + u.id)); }
+
+function renderUsers(q = '') {
+  const box = document.getElementById('uList');
+  const stats = document.getElementById('uStats');
+  q = q.trim().toLowerCase();
+  const list = USERS.filter(u => !q ||
+    uName(u).toLowerCase().includes(q) ||
+    (u.nick || '').toLowerCase().includes(q) ||
+    (u.phone || '').toLowerCase().includes(q) ||
+    (u.username || '').toLowerCase().includes(q));
+
+  const totSpent = USERS.reduce((s, u) => s + Number(u.spent || 0), 0);
+  const totPlayers = USERS.length;
+  const offline = USERS.filter(u => u.consent_offline == 1).length;
+  stats.innerHTML = `Игроков: <b>${totPlayers}</b> · показано: <b>${list.length}</b> · суммарные взносы: <b>${fmt(totSpent)} ₽</b> · офлайн-согласий: <b>${offline}</b>`;
+
+  if (!list.length) { box.innerHTML = '<p class="muted">Никого не найдено.</p>'; return; }
+
+  const rows = list.map(u => {
+    const contacts = [u.phone, u.username ? '@' + u.username : '', u.tg_id ? 'ТГ' : ''].filter(Boolean).join(' · ') || '—';
+    const on = u.consent_online == 1 ? '<span class="c-ok" title="Согласие принято онлайн">онлайн ✓</span>' : '';
+    const off = u.consent_offline == 1
+      ? `<span class="c-ok" title="Подписано офлайн${u.consent_offline_at ? ' · ' + dtHuman(u.consent_offline_at) : ''}">офлайн ✓</span>` : '';
+    const consent = (on + ' ' + off).trim() || '<span class="muted">—</span>';
+    return `<tr data-uid="${u.id}">
+      <td>${u.id}</td>
+      <td><b>${esc(uName(u))}</b>${u.is_admin == 1 ? ' <span class="c-ok">админ</span>' : ''}${u.nick && u.nick !== u.real_name ? `<br><span class="muted">«${esc(u.nick)}»</span>` : ''}</td>
+      <td class="muted" style="white-space:nowrap;">${esc(contacts)}</td>
+      <td style="text-align:center;">${u.played}${Number(u.itm) ? ` <span class="muted">/ ${u.itm} ITM</span>` : ''}</td>
+      <td style="text-align:right;white-space:nowrap;">${fmt(u.spent)} ₽</td>
+      <td style="text-align:right;">${fmt(u.points)}</td>
+      <td style="white-space:nowrap;">${consent}</td>
+      <td style="text-align:right;white-space:nowrap;">
+        <button class="btn btn-ghost btn-sm u-off">${u.consent_offline == 1 ? 'Снять офлайн' : 'Отметить офлайн'}</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  box.innerHTML = `<div style="overflow-x:auto;">
+    <table class="crm-table" style="width:100%;border-collapse:collapse;font-size:.9rem;">
+      <thead><tr style="text-align:left;color:var(--muted,#999);">
+        <th>#</th><th>Игрок</th><th>Контакты</th><th>Турниров</th><th>Взносы</th><th>Очки</th><th>Согласие</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+
+  box.querySelectorAll('tr[data-uid]').forEach(tr => {
+    const uid = Number(tr.dataset.uid);
+    tr.querySelector('.u-off').addEventListener('click', async (e) => {
+      const u = USERS.find(x => x.id === uid);
+      const turnOn = u.consent_offline != 1;
+      if (turnOn && !confirm(`Отметить, что ${uName(u)} подписал(а) согласие офлайн?`)) return;
+      try {
+        await adminApi('user_consent', { user_id: uid, offline: turnOn });
+        u.consent_offline = turnOn ? 1 : 0;
+        u.consent_offline_at = turnOn ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null;
+        renderUsers(document.getElementById('uSearch').value);
+      } catch (err) { alert(err.data?.message || 'Ошибка'); }
+    });
+  });
 }
 
 async function loadDuplicates() {

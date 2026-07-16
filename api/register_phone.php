@@ -9,8 +9,12 @@ $realName = trim((string) ($d['real_name'] ?? ''));
 $nick     = trim((string) ($d['nick'] ?? ''));
 $phoneRaw = (string) ($d['phone'] ?? '');
 $password = (string) ($d['password'] ?? '');
+$consent  = !empty($d['consent']);
 $phone    = normalize_phone($phoneRaw);
 
+if (!$consent) {
+    json_out(['error' => 'no_consent', 'message' => 'Нужно подтвердить согласие (18+ и правила клуба)'], 422);
+}
 if (mb_strlen($realName) < 3 || mb_strlen($realName) > 100) {
     json_out(['error' => 'bad_name', 'message' => 'Укажите фамилию и имя'], 422);
 }
@@ -37,11 +41,13 @@ if ($existing) {
         json_out(['error' => 'phone_taken', 'message' => 'Аккаунт с этим номером уже есть — войдите'], 409);
     }
     // claim: это «оффлайн»-карточка, заведённая админом по телефону
-    $upd = $pdo->prepare('UPDATE users SET real_name=?, nick=?, password_hash=?, onboarded=1 WHERE id=?');
+    $upd = $pdo->prepare('UPDATE users SET real_name=?, nick=?, password_hash=?, onboarded=1,
+        consent_online=1, consent_at=COALESCE(consent_at, NOW()) WHERE id=?');
     $upd->execute([$realName, $nick, $hash, $existing['id']]);
     $uid = (int) $existing['id'];
 } else {
-    $ins = $pdo->prepare('INSERT INTO users (real_name, nick, phone, password_hash, onboarded) VALUES (?,?,?,?,1)');
+    $ins = $pdo->prepare('INSERT INTO users (real_name, nick, phone, password_hash, onboarded, consent_online, consent_at)
+        VALUES (?,?,?,?,1,1,NOW())');
     $ins->execute([$realName, $nick, $phone, $hash]);
     $uid = (int) $pdo->lastInsertId();
 }

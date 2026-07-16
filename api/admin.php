@@ -168,6 +168,36 @@ switch ($action) {
         break;
     }
 
+    case 'users': { // мини-CRM: все игроки с участием и тратами
+        $rows = $pdo->query("
+            SELECT u.id, u.real_name, u.nick, u.first_name, u.username, u.phone, u.tg_id,
+                   u.is_admin, u.onboarded, u.consent_online, u.consent_at,
+                   u.consent_offline, u.consent_offline_at, u.created_at,
+              (SELECT COUNT(*)                 FROM results r WHERE r.user_id=u.id)                    AS played,
+              (SELECT COUNT(*)                 FROM results r WHERE r.user_id=u.id AND r.place<=9)     AS itm,
+              (SELECT COALESCE(SUM(r.points),0)FROM results r WHERE r.user_id=u.id)                    AS points,
+              (SELECT COALESCE(SUM(e.amount),0)FROM entries e WHERE e.user_id=u.id)                    AS spent,
+              (SELECT COUNT(*)                 FROM entries e WHERE e.user_id=u.id)                     AS entries_cnt,
+              (SELECT MAX(t.starts_at) FROM results r JOIN tournaments t ON t.id=r.tournament_id
+                 WHERE r.user_id=u.id)                                                                 AS last_played
+            FROM users u
+            ORDER BY spent DESC, played DESC, u.id ASC
+        ")->fetchAll();
+        json_out(['users' => $rows]);
+        break;
+    }
+
+    case 'user_consent': { // отметить/снять офлайн-подписанное согласие
+        only_method('POST');
+        $uid = (int) ($body['user_id'] ?? 0);
+        $off = !empty($body['offline']);
+        if (!$uid) json_out(['error' => 'bad_input'], 422);
+        $pdo->prepare('UPDATE users SET consent_offline=?, consent_offline_at=' . ($off ? 'NOW()' : 'NULL') . ' WHERE id=?')
+            ->execute([$off ? 1 : 0, $uid]);
+        json_out(['ok' => true]);
+        break;
+    }
+
     default:
         json_out(['error' => 'unknown_action'], 400);
 }

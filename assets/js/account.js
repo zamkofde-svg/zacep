@@ -99,9 +99,9 @@ function bindOnboarding() {
     const real_name = el('onbName').value.trim();
     const nick = el('onbNick').value.trim();
     const phone = el('onbPhone').value.trim();
-    if (!el('onbConsent').checked) { alert('Подтвердите, что вам исполнилось 18 лет'); return; }
+    if (!el('onbConsent').checked) { alert('Нужно подтвердить, что вам 18 лет и вы согласны с правилами клуба'); return; }
     try {
-      await api('onboarding.php', { method: 'POST', body: JSON.stringify({ real_name, nick, phone }) });
+      await api('onboarding.php', { method: 'POST', body: JSON.stringify({ real_name, nick, phone, consent: true }) });
       await route();
     } catch (e) {
       alert(e.data?.message || 'Проверьте ник и телефон');
@@ -134,7 +134,7 @@ function bindPhoneAuth() {
     try {
       await api('register_phone.php', { method: 'POST', body: JSON.stringify({
         real_name: el('rgName').value.trim(), nick: el('rgNick').value.trim(),
-        phone: el('rgPhone').value.trim(), password: el('rgPass').value,
+        phone: el('rgPhone').value.trim(), password: el('rgPass').value, consent: true,
       }) });
       await route();
     } catch (e) { alert(e.data?.message || 'Не удалось зарегистрироваться'); }

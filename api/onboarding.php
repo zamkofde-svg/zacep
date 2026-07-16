@@ -10,7 +10,11 @@ $data = json_in();
 $nick     = trim((string) ($data['nick'] ?? ''));
 $phone    = trim((string) ($data['phone'] ?? ''));
 $realName = trim((string) ($data['real_name'] ?? ''));
+$consent  = !empty($data['consent']);
 
+if (!$consent) {
+    json_out(['error' => 'no_consent', 'message' => 'Нужно подтвердить согласие (18+ и правила клуба)'], 422);
+}
 if (mb_strlen($realName) < 3 || mb_strlen($realName) > 100) {
     json_out(['error' => 'bad_name', 'message' => 'Укажите фамилию и имя'], 422);
 }
@@ -22,7 +26,8 @@ if ($phoneNorm !== '' && strlen(preg_replace('/\D/', '', $phoneNorm)) < 11) {
     json_out(['error' => 'bad_phone', 'message' => 'Проверьте номер телефона'], 422);
 }
 
-$stmt = db()->prepare('UPDATE users SET nick=?, phone=?, real_name=?, onboarded=1 WHERE id=?');
+$stmt = db()->prepare('UPDATE users SET nick=?, phone=?, real_name=?, onboarded=1,
+    consent_online=1, consent_at=COALESCE(consent_at, NOW()) WHERE id=?');
 $stmt->execute([$nick, $phoneNorm, $realName, $u['id']]);
 
 // авто-слияние: если этот телефон уже есть на «оффлайн»-карточке (без Telegram
