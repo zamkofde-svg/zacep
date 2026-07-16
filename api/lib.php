@@ -145,12 +145,16 @@ function public_user(array $u): array
 function normalize_phone(string $raw): string
 {
     $d = preg_replace('/\D/', '', $raw);
+    if ($d === '') return '';
+    if (strlen($d) > 11) {
+        $d = substr($d, -11);                       // ввели лишнее — берём хвост
+    }
     if (strlen($d) === 11 && ($d[0] === '8' || $d[0] === '7')) {
         $d = '7' . substr($d, 1);
     } elseif (strlen($d) === 10) {
         $d = '7' . $d;
     }
-    return $d === '' ? '' : '+' . $d;
+    return '+' . $d;
 }
 
 /**

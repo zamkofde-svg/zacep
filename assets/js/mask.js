@@ -1,17 +1,16 @@
 /* ===== Зацеп имеется — маска телефона для всех полей type=tel ===== */
 (function () {
   function fmt(v) {
-    let d = v.replace(/\D/g, '');
-    if (!d) return '';
-    if (d[0] === '8') d = '7' + d.slice(1);
-    else if (d[0] === '9') d = '7' + d;     // ввели сразу 9XX...
-    else if (d[0] !== '7') d = '7' + d;     // форсим РФ
-    d = d.slice(0, 11);
+    const raw = v.replace(/\D/g, '');
+    if (raw === '') return '';                 // пустое поле оставляем пустым
+    // откидываем код страны/междугородний (любые ведущие 7 и 8) —
+    // всё остальное это национальный номер (у РФ-мобильных начинается с 9)
+    const d = raw.replace(/^[78]+/, '').slice(0, 10);
     let r = '+7';
-    if (d.length > 1) r += ' (' + d.slice(1, 4);
-    if (d.length >= 4) r += ') ' + d.slice(4, 7);
-    if (d.length >= 7) r += '-' + d.slice(7, 9);
-    if (d.length >= 9) r += '-' + d.slice(9, 11);
+    if (d.length > 0) r += ' (' + d.slice(0, 3);
+    if (d.length >= 3) r += ') ' + d.slice(3, 6);
+    if (d.length >= 6) r += '-' + d.slice(6, 8);
+    if (d.length >= 8) r += '-' + d.slice(8, 10);
     return r;
   }
   // делегирование — ловит и динамически созданные поля (админка/консоль)
