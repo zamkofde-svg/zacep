@@ -42,6 +42,18 @@ async function api(path, opts = {}) {
 /* ---------------- Telegram Login Widget ---------------- */
 async function mountTelegramWidget() {
   const box = el('tg-widget');
+  // Подсказка, если виджет так и не загрузился (провайдер часто режет telegram.org)
+  const showFallback = () => {
+    if (box.querySelector('iframe')) return; // виджет успел появиться — ок
+    box.innerHTML =
+      '<div style="text-align:center;">' +
+        '<button type="button" class="btn btn-primary btn-block" id="tgRetry">↻ Загрузить кнопку Telegram</button>' +
+        '<p class="legal" style="margin-top:10px;">Не грузится? Провайдер может блокировать telegram.org — включи VPN и обнови, ' +
+        'или войди по телефону ниже.</p>' +
+      '</div>';
+    const r = document.getElementById('tgRetry');
+    if (r) r.addEventListener('click', mountTelegramWidget);
+  };
   try {
     const { tg_bot_username } = await api('config_public.php');
     if (!tg_bot_username) throw new Error('no-bot');
@@ -53,8 +65,11 @@ async function mountTelegramWidget() {
     s.setAttribute('data-radius', '12');
     s.setAttribute('data-onauth', 'onTelegramAuth(user)');
     s.setAttribute('data-request-access', 'write');
+    s.onerror = showFallback;
     box.innerHTML = '';
     box.appendChild(s);
+    // если за 5с iframe не появился — считаем, что заблокировано
+    setTimeout(showFallback, 5000);
   } catch {
     box.innerHTML = '<p class="legal">Кнопка входа Telegram появится после настройки бота на боевом домене.</p>';
   }
