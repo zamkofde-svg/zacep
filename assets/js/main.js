@@ -75,10 +75,9 @@ function parseDt(s){ if(!s) return null; const [d,t='00:00:00']=s.split(/[ T]/);
 function dateLine(s){ const d=parseDt(s); if(!d) return ''; return `${WD[d.getDay()]} · ${d.getDate()} ${MON[d.getMonth()]} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
 const FMTLINE = { classic:"Texas Hold'em NL", bounty:'Knockout · очки за нокауты', guest:'Гостевой турнир · очки в рейтинг' };
 
-function tcard(t, hit){
+function tcard(t){
   const left = Math.max(0, (t.seats||0) - (t.taken||0));
   return `<div class="tcard reveal in">
-    ${hit ? '<span class="ribbon">ХИТ</span>' : ''}
     <span class="date">${dateLine(t.starts_at)}</span>
     <h3>${(t.title||'').replace(/[<>]/g,'')}</h3>
     <p class="fmt">${FMTLINE[t.format]||FMTLINE.classic}</p>
@@ -111,8 +110,8 @@ async function loadTours(){
   } catch { tours=demoTours(); }
   const main=tours;                                  // в «Ближайших» показываем все, включая гостевые
   const gs=tours.filter(t=>t.format==='guest');
-  grid.innerHTML = main.length ? main.map((t,i)=>tcard(t, i===0)).join('') : '<p class="muted">Ближайшие турниры скоро появятся — следи за анонсами.</p>';
-  if(guest && gs.length) guest.insertAdjacentHTML('afterbegin', gs.map(t=>tcard(t,false)).join(''));
+  grid.innerHTML = main.length ? main.map(t=>tcard(t)).join('') : '<p class="muted">Ближайшие турниры скоро появятся — следи за анонсами.</p>';
+  if(guest && gs.length) guest.insertAdjacentHTML('afterbegin', gs.map(t=>tcard(t)).join(''));
 }
 loadTours();
 
