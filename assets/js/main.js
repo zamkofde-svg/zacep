@@ -109,7 +109,7 @@ async function loadTours(){
     const txt=await r.text(); tours=JSON.parse(txt).tournaments;
     if(!Array.isArray(tours)) throw 0;
   } catch { tours=demoTours(); }
-  const main=tours.filter(t=>t.format!=='guest');
+  const main=tours;                                  // в «Ближайших» показываем все, включая гостевые
   const gs=tours.filter(t=>t.format==='guest');
   grid.innerHTML = main.length ? main.map((t,i)=>tcard(t, i===0)).join('') : '<p class="muted">Ближайшие турниры скоро появятся — следи за анонсами.</p>';
   if(guest && gs.length) guest.insertAdjacentHTML('afterbegin', gs.map(t=>tcard(t,false)).join(''));
