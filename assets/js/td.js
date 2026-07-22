@@ -33,8 +33,8 @@ function clockBoxHTML(c) {
 function structureButtons(primary) {
   const cls = primary ? 'btn-primary' : 'btn-ghost';
   return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-    <button class="btn ${cls} btn-sm" data-struct="andrey" data-label="Андрей">Структура «Андрей» · 5000, старт 5/10, без анте</button>
-    <button class="btn btn-ghost btn-sm" data-struct="danil" data-label="Данил">Структура «Данил» · 3000, старт 10/20, с анте</button>
+    <button class="btn ${cls} btn-sm" data-struct="andrey" data-label="Андрей">Структура «Андрей» · 5000, старт 5/10</button>
+    <button class="btn btn-ghost btn-sm" data-struct="danil" data-label="Данил v2">Структура «Данил v2» · 3000, старт 10/20, вылет после 75/150</button>
   </div>`;
 }
 
@@ -94,7 +94,6 @@ function render(d) {
         <input id="qNum" type="number" inputmode="numeric" placeholder="№" style="width:90px;font-size:1.2rem;font-family:var(--font-head);">
         <button class="btn btn-sm btn-danger" id="qBust">Вылет</button>
         <button class="btn btn-primary btn-sm" id="qReentry">+ перезаход</button>
-        <button class="btn btn-ghost btn-sm" id="qAddon">+ аддон</button>
       </div>
     </div>
 
@@ -156,7 +155,6 @@ function render(d) {
   const qn = () => { const n = Number(document.getElementById('qNum').value); if (!n) { alert('Введите номер бэйджа'); return null; } return n; };
   document.getElementById('qBust').addEventListener('click', () => { const n = qn(); if (n && confirm(`Вылет игрока №${n}?`)) act(() => td('bust', { number: n })); });
   document.getElementById('qReentry').addEventListener('click', () => { const n = qn(); if (n) act(() => td('entry', { number: n, kind: 'reentry', amount: T.buyin })); });
-  document.getElementById('qAddon').addEventListener('click', () => { const n = qn(); if (n) act(() => td('entry', { number: n, kind: 'addon', amount: T.buyin })); });
   document.getElementById('drawBtn').addEventListener('click', () => { if (confirm('Пересобрать рассадку активных игроков? Текущие места изменятся.')) act(() => td('seat_draw', {})); });
   // ручная посадка
   document.getElementById('mvBtn').addEventListener('click', () => {
@@ -195,7 +193,6 @@ function render(d) {
     if (a === 'bust') { if (!confirm('Отметить вылет игрока?')) return; act(() => td('bust', { user_id: uid })); }
     else if (a === 'reactivate') act(() => td('reactivate', { user_id: uid }));
     else if (a === 'reentry') act(() => td('entry', { user_id: uid, kind: 'reentry', amount: T.buyin }));
-    else if (a === 'addon') act(() => td('entry', { user_id: uid, kind: 'addon', amount: T.buyin }));
   }));
 }
 
@@ -233,8 +230,7 @@ function rowHTML(p) {
       ${busted
         ? `<button class="btn btn-primary btn-sm" data-act="reentry" data-uid="${p.user_id}">+ перезаход</button>
            <button class="btn btn-ghost btn-sm" data-act="reactivate" data-uid="${p.user_id}">вернуть в игру</button>`
-        : `<button class="btn btn-ghost btn-sm" data-act="addon" data-uid="${p.user_id}">+ аддон</button>
-           <button class="btn btn-sm btn-danger" data-act="bust" data-uid="${p.user_id}">вылет</button>`}
+        : `<button class="btn btn-sm btn-danger" data-act="bust" data-uid="${p.user_id}">вылет</button>`}
     </div>
   </div>`;
 }
