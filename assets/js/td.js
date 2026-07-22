@@ -30,8 +30,16 @@ function clockBoxHTML(c) {
     <div class="muted" style="font-size:.85rem;margin-top:4px;" id="clkNext">Далее: ${blindsStr(c.next)}</div>`;
 }
 
+function structureButtons(primary) {
+  const cls = primary ? 'btn-primary' : 'btn-ghost';
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+    <button class="btn ${cls} btn-sm" data-struct="andrey" data-label="Андрей">Структура «Андрей» · 5000, старт 5/10, без анте</button>
+    <button class="btn btn-ghost btn-sm" data-struct="danil" data-label="Данил">Структура «Данил» · 3000, старт 10/20, с анте</button>
+  </div>`;
+}
+
 function clockControls(c, status) {
-  if (!c || !c.has_levels) return `<button class="btn btn-primary btn-sm" id="lvlDefault">Загрузить структуру «Классика» (10/20, уровни 15 мин, аддон после 75/150)</button>`;
+  if (!c || !c.has_levels) return structureButtons(true);
   if (status === 'running' || status === 'final') {
     return `
       ${c.paused ? '<button class="btn btn-primary btn-sm" id="clkResume">▶ Продолжить</button>' : '<button class="btn btn-ghost btn-sm" id="clkPause">⏸ Пауза</button>'}
@@ -39,8 +47,7 @@ function clockControls(c, status) {
       <button class="btn btn-ghost btn-sm" id="clkNextBtn">уровень ▶</button>
       <button class="btn btn-sm btn-danger" id="clkFinish">🏁 Финиш</button>`;
   }
-  return `<button class="btn btn-primary btn-sm" id="clkStart">▶ Старт турнира</button>
-          <button class="btn btn-ghost btn-sm" id="lvlDefault">Сбросить структуру (Классика 10/20)</button>`;
+  return `<button class="btn btn-primary btn-sm" id="clkStart">▶ Старт турнира</button>${structureButtons(false)}`;
 }
 
 (async function init() {
@@ -177,7 +184,10 @@ function render(d) {
       await load();
     } catch (e) { alert(e.data?.message || 'Не удалось завершить'); }
   });
-  document.getElementById('lvlDefault')?.addEventListener('click', () => { if (confirm('Применить стандартную структуру блайндов? Текущая будет заменена.')) act(() => td('levels_default', {})); });
+  document.querySelectorAll('[data-struct]').forEach(b => b.addEventListener('click', () => {
+    const key = b.dataset.struct, name = b.dataset.label || key;
+    if (confirm(`Применить структуру «${name}»? Текущая структура блайндов и стартовый стек будут заменены.`)) act(() => td('levels_default', { structure: key }));
+  }));
   startClockPoll();
 
   document.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {

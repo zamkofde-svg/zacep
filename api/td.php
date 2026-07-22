@@ -263,13 +263,28 @@ switch ($action) {
     case 'levels_default': {
         only_method('POST');
         if (!$tid) json_out(['error' => 'no_tournament'], 400);
+        $structs = blind_structures();
+        $key = (string) ($body['structure'] ?? 'andrey');
+        if (!isset($structs[$key])) $key = array_key_first($structs);
+        $st = $structs[$key];
         $pdo->query("DELETE FROM tournament_levels WHERE tournament_id=$tid");
         $ins = $pdo->prepare("INSERT INTO tournament_levels (tournament_id,idx,sb,bb,ante,duration_min,is_break,title) VALUES (?,?,?,?,?,?,?,?)");
         $i = 1;
-        foreach (default_levels() as [$sb, $bb, $ante, $min, $brk, $title]) {
+        foreach ($st['levels'] as [$sb, $bb, $ante, $min, $brk, $title]) {
             $ins->execute([$tid, $i++, $sb, $bb, $ante, $min, $brk, $title]);
         }
-        json_out(['ok' => true, 'count' => $i - 1]);
+        // приводим стартовый стек турнира к стеку структуры
+        $pdo->prepare("UPDATE tournaments SET stack=? WHERE id=?")->execute([(int) $st['stack'], $tid]);
+        json_out(['ok' => true, 'count' => $i - 1, 'structure' => $key, 'label' => $st['label'], 'stack' => (int) $st['stack']]);
+        break;
+    }
+
+    case 'structures': { // список именованных структур для выбора в консоли
+        $out = [];
+        foreach (blind_structures() as $k => $s) {
+            $out[] = ['key' => $k, 'label' => $s['label'], 'stack' => (int) $s['stack'], 'levels' => count($s['levels'])];
+        }
+        json_out(['structures' => $out]);
         break;
     }
 
