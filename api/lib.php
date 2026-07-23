@@ -357,6 +357,49 @@ function tg_send(?int $chatId, string $text): bool
     return $ok;
 }
 
+/** Человекочитаемое имя игрока для уведомлений. */
+function display_name(array $u): string
+{
+    foreach (['real_name', 'nick', 'first_name', 'username'] as $k) {
+        $v = trim((string) ($u[$k] ?? ''));
+        if ($v !== '') return $k === 'username' ? '@' . $v : $v;
+    }
+    return '#' . ($u['id'] ?? '?');
+}
+
+/** Строка «Мест занято: X/Y (свободно Z)» по турниру. */
+function seats_line(PDO $pdo, array $tour): string
+{
+    $c = $pdo->prepare("SELECT COUNT(*) FROM registrations WHERE tournament_id=? AND status<>'cancelled'");
+    $c->execute([(int) $tour['id']]);
+    $taken = (int) $c->fetchColumn();
+    $seats = (int) $tour['seats'];
+    $free  = max(0, $seats - $taken);
+    return "Мест занято: {$taken}/{$seats} (свободно {$free})";
+}
+
+/** Разослать уведомление всем админам (у кого есть tg_id и кто запускал бота). */
+function notify_admins(string $text): void
+{
+    foreach (db()->query("SELECT tg_id FROM users WHERE is_admin=1 AND tg_id IS NOT NULL") as $r) {
+        tg_send((int) $r['tg_id'], $text);
+    }
+}
+
+/** Уведомить админов о записи/выписке игрока на турнир. */
+function notify_reg_change(PDO $pdo, array $tour, array $user, string $kind): void
+{
+    $when = date('d.m H:i', strtotime((string) $tour['starts_at']));
+    $name = htmlspecialchars(display_name($user));
+    $title = htmlspecialchars((string) $tour['title']);
+    $head = [
+        'register' => "➕ Запись: <b>{$name}</b>",
+        'waitlist' => "📝 Лист ожидания: <b>{$name}</b>",
+        'cancel'   => "➖ Выписался: <b>{$name}</b>",
+    ][$kind] ?? "ℹ️ <b>{$name}</b>";
+    notify_admins("{$head}\n{$title} · {$when}\n" . seats_line($pdo, $tour));
+}
+
 /** Определения ачивок: code => [emoji, title, kind, n]. */
 function achievement_defs(): array
 {

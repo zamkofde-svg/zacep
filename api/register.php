@@ -27,6 +27,7 @@ if (!$tour) {
 if ($action === 'cancel') {
     $del = $pdo->prepare("UPDATE registrations SET status='cancelled' WHERE user_id=? AND tournament_id=?");
     $del->execute([$u['id'], $tid]);
+    notify_reg_change($pdo, $tour, $u, 'cancel');
     json_out(['ok' => true, 'status' => 'cancelled']);
 }
 
@@ -49,5 +50,8 @@ $msg = $status === 'confirmed'
     ? "✅ Ты записан на турнир\n<b>" . htmlspecialchars($tour['title']) . "</b> · {$when}\nЖдём за столом ♠"
     : "📝 Ты в листе ожидания на\n<b>" . htmlspecialchars($tour['title']) . "</b> · {$when}\nСообщим, как освободится место.";
 tg_send(!empty($u['tg_id']) ? (int) $u['tg_id'] : null, $msg);
+
+// уведомление админам (мне и Славе)
+notify_reg_change($pdo, $tour, $u, $status === 'confirmed' ? 'register' : 'waitlist');
 
 json_out(['ok' => true, 'status' => $status]);

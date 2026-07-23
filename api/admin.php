@@ -109,13 +109,29 @@ switch ($action) {
             $when = date('d.m в H:i', strtotime((string) $tour['starts_at']));
             tg_send((int) $tg, "✅ Тебя записали на турнир\n<b>" . htmlspecialchars($tour['title']) . "</b> · {$when}");
         }
+        // уведомление админам
+        $pu = $pdo->prepare('SELECT * FROM users WHERE id=?');
+        $pu->execute([$uid]);
+        if ($puRow = $pu->fetch()) {
+            notify_reg_change($pdo, $tour, $puRow, $status === 'confirmed' ? 'register' : 'waitlist');
+        }
         json_out(['ok' => true, 'status' => $status, 'user_id' => $uid]);
         break;
 
     case 'reg_cancel':
         only_method('POST');
+        $ctid = (int) ($body['tournament_id'] ?? 0);
+        $cuid = (int) ($body['user_id'] ?? 0);
         $pdo->prepare("UPDATE registrations SET status='cancelled' WHERE tournament_id=? AND user_id=?")
-            ->execute([(int) ($body['tournament_id'] ?? 0), (int) ($body['user_id'] ?? 0)]);
+            ->execute([$ctid, $cuid]);
+        // уведомление админам
+        $ct = $pdo->prepare('SELECT * FROM tournaments WHERE id=?');
+        $ct->execute([$ctid]);
+        $cu = $pdo->prepare('SELECT * FROM users WHERE id=?');
+        $cu->execute([$cuid]);
+        if (($ctRow = $ct->fetch()) && ($cuRow = $cu->fetch())) {
+            notify_reg_change($pdo, $ctRow, $cuRow, 'cancel');
+        }
         json_out(['ok' => true]);
         break;
 
