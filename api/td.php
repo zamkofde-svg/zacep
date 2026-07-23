@@ -9,11 +9,6 @@ $body   = json_in();
 $action = $_GET['action'] ?? $body['action'] ?? '';
 $tid    = (int) ($_GET['tournament_id'] ?? $body['tournament_id'] ?? 0);
 
-function display_name(array $u): string
-{
-    return $u['nick'] ?: ($u['real_name'] ?: ($u['first_name'] ?: ('@' . ($u['username'] ?? 'игрок'))));
-}
-
 /** Найти пользователя по id или телефону, при необходимости создать «оффлайн»-карточку. */
 function resolve_user(PDO $pdo, array $body): int
 {

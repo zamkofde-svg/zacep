@@ -360,7 +360,7 @@ function tg_send(?int $chatId, string $text): bool
 /** Человекочитаемое имя игрока для уведомлений. */
 function display_name(array $u): string
 {
-    foreach (['real_name', 'nick', 'first_name', 'username'] as $k) {
+    foreach (['nick', 'real_name', 'first_name', 'username'] as $k) {
         $v = trim((string) ($u[$k] ?? ''));
         if ($v !== '') return $k === 'username' ? '@' . $v : $v;
     }
