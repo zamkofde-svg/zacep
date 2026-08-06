@@ -4,9 +4,10 @@ const fmt = (n) => Number(n || 0).toLocaleString('ru-RU');
 const $ = (id) => document.getElementById(id);
 const STATUS = { scheduled: 'Скоро старт', running: 'Идёт игра', final: 'Финальный стол', finished: 'Завершён' };
 function fmtClock(s) { s = Math.max(0, s | 0); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; }
+function fmtDur(s) { s = Math.max(0, s | 0); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60; return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`; }
 function blinds(lv) { return lv ? `${fmt(lv.sb)} / ${fmt(lv.bb)}` : '—'; }
 
-let endAt = null, paused = true; // локальный тик между опросами
+let endAt = null, paused = true, breakEndAt = null; // локальный тик между опросами
 
 async function sync() {
   if (!TID) { $('mid').innerHTML = '<div class="idle">Не указан турнир (?t=ID)</div>'; return; }
@@ -24,13 +25,24 @@ async function sync() {
 
   const c = d.clock;
   if (d.tournament.status !== 'running' || !c.has_levels) {
-    endAt = null; paused = true;
+    endAt = null; paused = true; breakEndAt = null;
+    $('mBreak').textContent = '—';
     $('mid').innerHTML = `<div class="idle">${d.tournament.status === 'finished' ? '🏁 Турнир завершён' : 'Турнир ещё не запущен'}</div>`;
     return;
   }
   paused = !!c.paused;
   endAt = paused ? null : (Date.now() + c.remaining * 1000);
   const cur = c.current || {};
+
+  // «до перерыва»
+  if (cur.is_break) {
+    breakEndAt = null; $('mBreak').textContent = 'сейчас';
+  } else if (c.to_break != null) {
+    breakEndAt = paused ? null : (Date.now() + c.to_break * 1000);
+    $('mBreak').textContent = fmtDur(c.to_break);
+  } else {
+    breakEndAt = null; $('mBreak').textContent = '—';
+  }
   const mid = $('mid');
   if (cur.is_break) {
     mid.innerHTML = `<div class="lvl">Уровень ${c.level} / ${c.total}</div>
@@ -49,6 +61,7 @@ async function sync() {
 function tick() {
   const t = $('t');
   if (t && endAt && !paused) t.textContent = fmtClock((endAt - Date.now()) / 1000);
+  if (breakEndAt && !paused) $('mBreak').textContent = fmtDur((breakEndAt - Date.now()) / 1000);
 }
 
 sync();

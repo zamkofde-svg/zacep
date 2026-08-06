@@ -249,9 +249,21 @@ function tournament_clock(PDO $pdo, int $tid): array
                 'is_break' => (bool) $lv['is_break'], 'title' => $lv['title'], 'duration_min' => (int) $lv['duration_min']];
     };
 
+    // секунды от начала текущего уровня (с остатком $remaining) до старта ближайшего перерыва
+    $time_to_break = function (int $cur, int $remaining) use ($levels, $total): ?int {
+        if ($cur < 1 || $cur > $total) return null;
+        if ((int) $levels[$cur - 1]['is_break']) return 0; // уже перерыв
+        $acc = $remaining;
+        for ($j = $cur + 1; $j <= $total; $j++) {
+            if ((int) $levels[$j - 1]['is_break']) return $acc;
+            $acc += ((int) $levels[$j - 1]['duration_min']) * 60;
+        }
+        return null; // перерывов впереди нет
+    };
+
     if ($tr['status'] !== 'running') {
         $cur = max(1, min($total, (int) $tr['current_level'] ?: 1));
-        return array_merge($base, ['current' => $pack($li($cur)), 'next' => $pack($li($cur + 1)), 'level' => $cur]);
+        return array_merge($base, ['current' => $pack($li($cur)), 'next' => $pack($li($cur + 1)), 'level' => $cur, 'to_break' => null]);
     }
 
     $cur = max(1, min($total, (int) $tr['current_level']));
@@ -271,7 +283,9 @@ function tournament_clock(PDO $pdo, int $tid): array
                 ->execute([$cur, $passed, $tid]);
         }
     }
-    return array_merge($base, ['level' => $cur, 'remaining' => $remaining, 'current' => $pack($li($cur)), 'next' => $pack($li($cur + 1))]);
+    return array_merge($base, ['level' => $cur, 'remaining' => $remaining,
+        'current' => $pack($li($cur)), 'next' => $pack($li($cur + 1)),
+        'to_break' => $time_to_break($cur, $remaining)]);
 }
 
 /** Краткая сводка турнира для лайв-экрана. */
