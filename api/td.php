@@ -350,7 +350,13 @@ switch ($action) {
     case 'finalize': { // завершить турнир и начислить очки на финальный стол
         only_method('POST');
         if (!$tid) json_out(['error' => 'no_tournament'], 400);
-        $tour = $pdo->query("SELECT stack FROM tournaments WHERE id=$tid")->fetch();
+        $tour = $pdo->query("SELECT stack, status FROM tournaments WHERE id=$tid")->fetch();
+        // защита от повторного финиша: не начисляем и не уведомляем второй раз
+        if ($tour && $tour['status'] === 'finished') {
+            $poolPts = (int) $pdo->query("SELECT COALESCE(SUM(points),0) FROM results WHERE tournament_id=$tid")->fetchColumn();
+            $paidCnt = (int) $pdo->query("SELECT COUNT(*) FROM results WHERE tournament_id=$tid")->fetchColumn();
+            json_out(['ok' => true, 'already_finished' => true, 'pool' => $poolPts, 'paid_places' => $paidCnt]);
+        }
 
         // победитель = последний активный
         $act = $pdo->query("SELECT user_id FROM tournament_players WHERE tournament_id=$tid AND status='active'")->fetchAll();
