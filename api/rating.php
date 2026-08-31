@@ -4,7 +4,21 @@ declare(strict_types=1);
 require __DIR__ . '/lib.php';
 
 $period = $_GET['period'] ?? 'month';
-$season = current_season(); // сезон по сегодняшней дате (см. seasons() в lib.php)
+
+// сезон: по умолчанию текущий, либо выбранный через ?season=<key>
+$allSeasons = seasons();
+$season = current_season();
+if (!empty($_GET['season'])) {
+    foreach ($allSeasons as $s) {
+        if ($s['key'] === $_GET['season']) { $season = $s; break; }
+    }
+}
+// список уже стартовавших сезонов для выбора (новые сверху)
+$today = date('Y-m-d');
+$started = array_values(array_filter($allSeasons, fn($s) => $s['start'] <= $today));
+$started = array_reverse($started);
+$seasonList = array_map(fn($s) => ['key' => $s['key'], 'name' => $s['name']], $started);
+
 $where = '';
 if ($period === 'month') {
     $where = 'WHERE YEAR(res.created_at)=YEAR(CURDATE()) AND MONTH(res.created_at)=MONTH(CURDATE())';
@@ -39,4 +53,10 @@ foreach (db()->query($sql) as $r) {
     ];
 }
 
-json_out(['period' => $period, 'season' => $season['name'], 'rating' => $rows]);
+json_out([
+    'period'     => $period,
+    'season'     => $season['name'],
+    'season_key' => $season['key'],
+    'seasons'    => $seasonList,
+    'rating'     => $rows,
+]);

@@ -32,16 +32,36 @@ const medals = ['<span class="medal g">1</span>', '<span class="medal s">2</span
 
 const PERIOD_MAP = { month: 'month', season: 'season', alltime: 'all' };
 const ratingCache = {};
-async function renderLB(tab) {
-  if (!lbBody) return;
-  let list = ratingCache[tab];
-  if (!list) {
-    try {
-      const r = await fetch('api/rating.php?period=' + (PERIOD_MAP[tab] || 'month'), { credentials: 'same-origin' });
-      list = (await r.json()).rating || [];
-      ratingCache[tab] = list;
-    } catch { list = []; }
+
+function fillSeasonPicker(data) {
+  const sel = document.getElementById('seasonPick');
+  if (!sel || !Array.isArray(data.seasons)) return;
+  const sig = data.seasons.map(s => s.key).join(',');
+  if (sel.dataset.sig !== sig) {
+    sel.innerHTML = data.seasons.map(s => `<option value="${s.key}">${String(s.name).replace(/[<>]/g, '')}</option>`).join('');
+    sel.dataset.sig = sig;
   }
+  if (data.season_key) sel.value = data.season_key;
+}
+
+async function renderLB(tab, seasonKey) {
+  if (!lbBody) return;
+  const pickWrap = document.getElementById('seasonPickWrap');
+  if (pickWrap) pickWrap.hidden = (tab !== 'season');
+
+  const cacheKey = tab + (seasonKey ? ':' + seasonKey : '');
+  let data = ratingCache[cacheKey];
+  if (!data) {
+    try {
+      let url = 'api/rating.php?period=' + (PERIOD_MAP[tab] || 'month');
+      if (tab === 'season' && seasonKey) url += '&season=' + encodeURIComponent(seasonKey);
+      data = await (await fetch(url, { credentials: 'same-origin' })).json();
+      ratingCache[cacheKey] = data;
+    } catch { data = { rating: [] }; }
+  }
+  if (tab === 'season') fillSeasonPicker(data);
+
+  const list = data.rating || [];
   if (!list.length) {
     lbBody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:26px;color:var(--muted)">Рейтинг появится после первых турниров.</td></tr>';
     return;
@@ -55,6 +75,7 @@ async function renderLB(tab) {
       <td class="pts">${fmt(p.points)}</td>
     </tr>`).join('');
 }
+document.getElementById('seasonPick')?.addEventListener('change', e => renderLB('season', e.target.value));
 
 // Hero-карточка «Рейтинг месяца» — реальный топ-5
 async function loadHeroRating() {
