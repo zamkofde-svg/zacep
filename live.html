@@ -30,6 +30,11 @@
     .lt .l { color: var(--muted); font-size: clamp(.8rem,1.4vw,1.1rem); }
     .break-big { font-family: var(--font-head); font-weight: 800; font-size: clamp(2.5rem,9vw,7rem); color: var(--accent); letter-spacing: .05em; }
     .idle { color: var(--muted); font-family: var(--font-head); font-size: clamp(1.5rem,4vw,3rem); text-align:center; }
+    .payouts { margin-top: 2.2vh; text-align: center; max-width: 94vw; }
+    .payouts .pl { display:block; color: var(--muted); font-size: clamp(.75rem,1.5vw,1.1rem); text-transform: uppercase; letter-spacing:.12em; margin-bottom: 1vh; }
+    .payouts .pr { font-family: var(--font-head); font-weight:700; font-size: clamp(1rem,2.6vw,2rem); display:flex; flex-wrap:wrap; justify-content:center; gap:.5vh 1.4vw; }
+    .payouts .pr span { white-space:nowrap; }
+    .payouts .pr b { color: var(--accent); margin-right:.3em; }
     @media (max-width:700px){ .live-bot{ grid-template-columns:repeat(2,1fr); } }
   </style>
 </head>
@@ -48,6 +53,6 @@
       <div class="lt"><div class="n" id="mChips">—</div><div class="l">фишек в игре</div></div>
     </div>
   </div>
-  <script src="assets/js/live.js?v=643"></script>
+  <script src="assets/js/live.js?v=644"></script>
 </body>
 </html>

@@ -6,6 +6,12 @@ const STATUS = { scheduled: 'Скоро старт', running: 'Идёт игра
 function fmtClock(s) { s = Math.max(0, s | 0); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; }
 function fmtDur(s) { s = Math.max(0, s | 0); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60; return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`; }
 function blinds(lv) { return lv ? `${fmt(lv.sb)} / ${fmt(lv.bb)}` : '—'; }
+function payoutsHTML(d) {
+  const c = d.clock, p = d.payouts;
+  if (!c || !c.past_break || !p || !p.places || !p.places.length) return '';
+  const items = p.places.map(x => `<span><b>${x.place}</b>${fmt(x.points)}</span>`).join('');
+  return `<div class="payouts"><span class="pl">🏆 очки за места</span><div class="pr">${items}</div></div>`;
+}
 
 let endAt = null, paused = true, breakEndAt = null; // локальный тик между опросами
 
@@ -48,12 +54,14 @@ async function sync() {
     mid.innerHTML = `<div class="lvl">Уровень ${c.level} / ${c.total}</div>
       <div class="timer ${paused ? 'paused' : ''}" id="t">${fmtClock(c.remaining)}</div>
       <div class="break-big">☕ ${cur.title || 'ПЕРЕРЫВ'}</div>
-      <div class="nextb">Далее: ${blinds(c.next)}</div>`;
+      <div class="nextb">Далее: ${blinds(c.next)}</div>
+      ${payoutsHTML(d)}`;
   } else {
     mid.innerHTML = `<div class="lvl">Уровень ${c.level} / ${c.total}${paused ? ' · ПАУЗА' : ''}</div>
       <div class="timer ${paused ? 'paused' : ''}" id="t">${fmtClock(c.remaining)}</div>
       <div class="blinds">${fmt(cur.sb)} / ${fmt(cur.bb)} ${cur.ante ? `<small>анте ${fmt(cur.ante)}</small>` : ''}</div>
-      <div class="nextb">Далее: ${c.next ? (c.next.is_break ? (c.next.title || 'перерыв') : blinds(c.next)) : 'финал'}</div>`;
+      <div class="nextb">Далее: ${c.next ? (c.next.is_break ? (c.next.title || 'перерыв') : blinds(c.next)) : 'финал'}</div>
+      ${payoutsHTML(d)}`;
   }
 }
 

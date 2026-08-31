@@ -444,6 +444,23 @@ function current_season(): array
     return end($list); // всё позади — последний известный
 }
 
+/** Проекция очков по местам на текущий момент (та же формула, что на финише). */
+function projected_payouts(PDO $pdo, int $tid, int $stack): array
+{
+    $entries = (int) $pdo->query("SELECT COUNT(*) FROM entries WHERE tournament_id=$tid")->fetchColumn();
+    $players = (int) $pdo->query("SELECT COUNT(*) FROM tournament_players WHERE tournament_id=$tid")->fetchColumn();
+    if ($entries <= 0 || $players <= 0 || $stack <= 0) return ['pool' => 0, 'places' => []];
+    $pool  = (int) round($entries * $stack / 100);
+    $curve = [30, 20, 14, 11, 8, 6, 5, 4, 2]; // как в finalize
+    $paid  = max(1, min(9, $players));
+    $norm  = array_sum(array_slice($curve, 0, $paid));
+    $places = [];
+    for ($p = 1; $p <= $paid; $p++) {
+        $places[] = ['place' => $p, 'points' => (int) round($pool * $curve[$p - 1] / $norm)];
+    }
+    return ['pool' => $pool, 'places' => $places];
+}
+
 /** Определения ачивок: code => [emoji, title, kind, n]. */
 function achievement_defs(): array
 {
