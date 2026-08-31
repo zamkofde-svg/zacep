@@ -3,15 +3,13 @@
 declare(strict_types=1);
 require __DIR__ . '/lib.php';
 
-// Начало текущего сезона. Пока — с первого турнира клуба. Поменять при старте нового сезона.
-const SEASON_START = '2026-06-21';
-
 $period = $_GET['period'] ?? 'month';
+$season = current_season(); // сезон по сегодняшней дате (см. seasons() в lib.php)
 $where = '';
 if ($period === 'month') {
     $where = 'WHERE YEAR(res.created_at)=YEAR(CURDATE()) AND MONTH(res.created_at)=MONTH(CURDATE())';
 } elseif ($period === 'season') {
-    $where = "WHERE res.created_at >= '" . SEASON_START . " 00:00:00'";
+    $where = "WHERE res.created_at BETWEEN '{$season['start']} 00:00:00' AND '{$season['end']} 23:59:59'";
 }
 
 $sql = "
@@ -41,4 +39,4 @@ foreach (db()->query($sql) as $r) {
     ];
 }
 
-json_out(['period' => $period, 'rating' => $rows]);
+json_out(['period' => $period, 'season' => $season['name'], 'rating' => $rows]);

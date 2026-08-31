@@ -242,6 +242,13 @@ function tournament_clock(PDO $pdo, int $tid): array
              'level' => (int) $tr['current_level'], 'remaining' => 0, 'paused' => (bool) $tr['clock_paused']];
     if ($total === 0) return $base;
 
+    // индекс первого перерыва (1-based, 0 если перерыва нет)
+    $break_idx = 0;
+    for ($i = 1; $i <= $total; $i++) {
+        if ((int) $levels[$i - 1]['is_break']) { $break_idx = $i; break; }
+    }
+    $past_break = fn(int $cur): bool => $break_idx > 0 && $cur >= $break_idx;
+
     $li = fn($i) => ($i >= 1 && $i <= $total) ? $levels[$i - 1] : null;
     $pack = function ($lv) {
         if (!$lv) return null;
@@ -263,7 +270,7 @@ function tournament_clock(PDO $pdo, int $tid): array
 
     if ($tr['status'] !== 'running') {
         $cur = max(1, min($total, (int) $tr['current_level'] ?: 1));
-        return array_merge($base, ['current' => $pack($li($cur)), 'next' => $pack($li($cur + 1)), 'level' => $cur, 'to_break' => null]);
+        return array_merge($base, ['current' => $pack($li($cur)), 'next' => $pack($li($cur + 1)), 'level' => $cur, 'to_break' => null, 'past_break' => $past_break($cur)]);
     }
 
     $cur = max(1, min($total, (int) $tr['current_level']));
@@ -285,7 +292,7 @@ function tournament_clock(PDO $pdo, int $tid): array
     }
     return array_merge($base, ['level' => $cur, 'remaining' => $remaining,
         'current' => $pack($li($cur)), 'next' => $pack($li($cur + 1)),
-        'to_break' => $time_to_break($cur, $remaining)]);
+        'to_break' => $time_to_break($cur, $remaining), 'past_break' => $past_break($cur)]);
 }
 
 /** Краткая сводка турнира для лайв-экрана. */
@@ -412,6 +419,29 @@ function notify_reg_change(PDO $pdo, array $tour, array $user, string $kind): vo
         'cancel'   => "➖ Выписался: <b>{$name}</b>",
     ][$kind] ?? "ℹ️ <b>{$name}</b>";
     notify_admins("{$head}\n{$title} · {$when}\n" . seats_line($pdo, $tour));
+}
+
+/** Сезоны клуба. Даты включительно. Добавлять новые по мере запуска. */
+function seasons(): array
+{
+    return [
+        ['key' => 'summer2026', 'name' => 'Летний сезон 2026',  'start' => '2026-06-21', 'end' => '2026-08-31'],
+        ['key' => 'autumn2026', 'name' => 'Осенний сезон 2026', 'start' => '2026-09-01', 'end' => '2026-11-30'],
+    ];
+}
+
+/** Текущий сезон по сегодняшней дате (или ближайший предстоящий / последний). */
+function current_season(): array
+{
+    $today = date('Y-m-d');
+    $list = seasons();
+    foreach ($list as $s) {
+        if ($today >= $s['start'] && $today <= $s['end']) return $s;
+    }
+    foreach ($list as $s) {
+        if ($today < $s['start']) return $s; // ещё не начавшийся ближайший
+    }
+    return end($list); // всё позади — последний известный
 }
 
 /** Определения ачивок: code => [emoji, title, kind, n]. */
